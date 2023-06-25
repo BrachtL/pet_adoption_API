@@ -29,6 +29,7 @@ process.on('unhandledRejection', (err) => {
 //check if server is online
 app.route("/").get((requirement, response) => {
   response.send("The server is online");
+  console.log("The server is online");
 });
 
 app.listen(3000);
@@ -37,15 +38,14 @@ console.log("successful loaded :D");
 
 
 
-
 /*
+  db table -> test_user
+  db fields -> id (AI, PK), email (UNIQUE), password (char(60))
   next steps:
-  - to set proper env vars
-  - create a table in my current db to test
   - create the signup and sign in, with hash and jwt
   - test with insomnia
   
-  - to model db, user data
+  - model db, user data
   - begin app dev
   - backend dev
   - test

@@ -131,3 +131,4 @@ dist
 
 # config params and credentials
 configPar.js
+dbConfig.js
