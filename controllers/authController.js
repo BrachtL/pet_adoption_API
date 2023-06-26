@@ -59,20 +59,22 @@ module.exports.login_post = async (req, res) => {
 
 }
 
+module.exports.logout_get = async (req, res, decodedToken) => {
+  
+  const token = req.headers.authorization;
+
+  try {
+    console.log("I am here");
+    //const isSuccess = insertTokenInBlacklist(token); //todo
+    console.log(req.decodedToken);
+
+  } catch(e) {
+
+  }
+}
+
 function createToken(id) {
   return jwt.sign({id: id}, jwtSecret, {
     expiresIn: 30 * 60 //30 min in secs
   });
 }
-
-/*
-
-considerations:
-
-  - Make a handleError function
-  - I dont need to check if the user already exists in db, or such things
-    - Instead: make a particular message for each MySQL error 
-  - put id in payload, not sensitive data
-  - function createToken(id)
-
-*/
