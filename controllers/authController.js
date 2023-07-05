@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { jwtSecret } = require('../configPar');
-const { insertUser, getUser } = require('../Database/queries');
+const { insertUser, getCredentials } = require('../Database/queries');
 
 module.exports.signup_post = async (req, res) => {
   
@@ -10,7 +10,7 @@ module.exports.signup_post = async (req, res) => {
   
   try {
     const salt = await bcrypt.genSalt();
-    hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(password, salt);
     const id = await insertUser(email, hashedPassword);
     const token = createToken(id);
     
@@ -30,18 +30,18 @@ module.exports.login_post = async (req, res) => {
   const { email, password } = req.body;
   
   try {
-    const user = await getUser(email);
+    const user = await getCredentials(email);
 
     if(user) {
+      console.log("Start bcrypt.compare()");
       const auth = await bcrypt.compare(password, user.password);
-      console.log("I am here");
+      console.log("Finish bcrypt.compare()");
       console.log("AUTH: ", auth);
       if(auth) {
         //send access token to the client
         const token = createToken(user.id);
         res.status(200).json({
-            token: token,
-            id: user.id
+            message: token
           });
       } else {
         throw Error('incorrect password');
@@ -54,7 +54,7 @@ module.exports.login_post = async (req, res) => {
   } catch(e) {
 
     //res.status(400).json({});
-    res.status(400).send(e.toString());
+    res.status(400).json({message: e.toString()});
   }
 
 }
