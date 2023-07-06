@@ -3,25 +3,25 @@ const jwt = require('jsonwebtoken');
 const { jwtSecret } = require('../configPar');
 const { insertUser, getCredentials } = require('../Database/queries');
 
+//todo: make  and send a proper message in case duplicated e-mail
 module.exports.signup_post = async (req, res) => {
   
-  const { email, password } = req.body;
+  const { email, password, name, age, category } = req.body;
   //todo: validate strings email and password: length, special chars, etc. Here and in front-end. Here for security and front for usability
   
   try {
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
-    const id = await insertUser(email, hashedPassword);
+    const id = await insertUser(email, hashedPassword, name, age, category);
     const token = createToken(id);
     
     res.status(201).json({
-        "token": token,
-        "id": id
+        "token": token
       });
   } catch(e) {
     console.log(e);
     //console.log(e.toString().includes("Duplicate entry") && e.toString().includes("email"));
-    res.status(500).send(e.toString());
+    res.status(400).json({message: e.toString()});
   }
 }
 

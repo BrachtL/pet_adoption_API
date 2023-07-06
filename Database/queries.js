@@ -2,17 +2,25 @@ const pool = require('./dbConfig');
 
 //todo: change the commented lines
 async function insertUser(
-  email, hashedPassword, age, category, description, id_location,
-  image_url, name
+  email, hashedPassword, name, age, category, description, id_location,
+  image_url
   ) {
   try {
     const connection = await pool.getConnection();
+    //const [results, fields] = await connection.query(`
+    //  INSERT INTO users (id_location, email, name, age, password, description, image_url, category) 
+    //  VALUES ('${id_location}', '${email}', '${name}', '${age}', '${hashedPassword}', '${description}', '${image_url}', '${category}')`);
     const [results, fields] = await connection.query(`
       INSERT INTO users (id_location, email, name, age, password, description, image_url, category) 
-      VALUES ('${id_location}', '${email}', '${name}', '${age}', '${hashedPassword}', '${description}', '${image_url}', '${category}')`);
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id_location, email, name, age, hashedPassword, description, image_url, category]);    
     connection.release();
-    console.log(`INSERT INTO users (id_location, email, name, age, password, description, image_url, category) 
-    VALUES ('${id_location}', '${email}', '${name}', '${age}', '${hashedPassword}', '${description}', '${image_url}', '${category}')`);
+    //console.log(`INSERT INTO users (id_location, email, name, age, password, description, image_url, category) 
+    //VALUES ('${id_location}', '${email}', '${name}', '${age}', '${hashedPassword}', '${description}', '${image_url}', '${category}')`);
+    console.log(`
+    INSERT INTO users (id_location, email, name, age, password, description, image_url, category) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id_location, email, name, age, hashedPassword, description, image_url, category]);
     console.log('insertUser() return:', results);
     return results.insertId;
   } catch (err) {
@@ -38,7 +46,7 @@ async function getCredentials(email) {
   }
 }
 
-async function getUser(email, password) {
+async function getUser(id) {
   try {
     const connection = await pool.getConnection();
     const [results, fields] = await connection.query(`
