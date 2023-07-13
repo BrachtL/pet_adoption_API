@@ -1,22 +1,31 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { jwtSecret } = require('../configPar');
-const { insertUser, getCredentials } = require('../Database/queries');
+const { insertUser, getCredentials, getLocationId, insertLocation } = require('../Database/queries');
 
-//todo: make  and send a proper message in case duplicated e-mail
 module.exports.signup_post = async (req, res) => {
   
-  const { email, password, name, age, category } = req.body;
+  const { email, password, name, age, category, latitude, longitude, uf, city } = req.body;
   //todo: validate strings email and password: length, special chars, etc. Here and in front-end. Here for security and front for usability
+  //done: front end already validates fields
   
   try {
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
-    const id = await insertUser(email, hashedPassword, name, age, category);
-    const token = createToken(id);
     
-    res.status(201).json({
-        "token": token
+    var locationId = await getLocationId(city, uf);
+
+    if (locationId == 0) {
+      locationId = await insertLocation(latitude, longitude, uf, city);
+    }
+
+    const id = await insertUser(email, hashedPassword, name, age, category, undefined, locationId, undefined);
+    //const token = createToken(id);
+    console.log("id -> ", id);
+    
+    res.status(200).json({
+        //"token": token
+        "message": "Success"
       });
   } catch(e) {
     console.log(e);
