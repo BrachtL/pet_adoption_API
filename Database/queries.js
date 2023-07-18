@@ -1,6 +1,6 @@
 const pool = require('./dbConfig');
 
-//todo: change the commented lines
+//todo: changed the commented lines
 async function insertUser(
   email, hashedPassword, name, age, category, description, locationId,
   imageUrl
@@ -104,9 +104,31 @@ async function getUser(id) {
 }
 
 
+async function getPetsExceptMine(userId) {
+  try {
+    const connection = await pool.getConnection();
+    const [results, fields] = await connection.query(`
+    SELECT pets.id, pets.id_user, pets.id_location, pets.main_image_URL, pets.name, pets.birthday,
+    pets.species, pets.breed, pets.gender, pets.description, pets.creation_datetime,
+    locations.country, locations.uf, locations.city, locations.latitude, locations.longitude
+    FROM pets
+    JOIN locations ON pets.id_location = locations.id
+    WHERE pets.id_user != ?`, [userId]);
+    connection.release();
+    console.log(`getPetsExceptMine(${userId}) return: ${results}`);
+    return results;
+  } catch (err) {
+    console.log('Error querying database: getPetsExceptMine', err);
+    console.log("THE MESSAGE IS:  ->> ", err.sqlMessage, " <<-");
+    throw new Error(err.sqlMessage);
+  }
+}
+
+
 module.exports = {
   insertUser,
   getCredentials,
   getLocationId,
-  insertLocation
+  insertLocation,
+  getPetsExceptMine
 }

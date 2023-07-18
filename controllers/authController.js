@@ -5,7 +5,7 @@ const { insertUser, getCredentials, getLocationId, insertLocation } = require('.
 
 module.exports.signup_post = async (req, res) => {
   
-  const { email, password, name, age, category, latitude, longitude, uf, city } = req.body;
+  const { email, password, name, age, category, lat, lng, uf, city } = req.body;
   //todo: validate strings email and password: length, special chars, etc. Here and in front-end. Here for security and front for usability
   //done: front end already validates fields
   
@@ -16,7 +16,11 @@ module.exports.signup_post = async (req, res) => {
     var locationId = await getLocationId(city, uf);
 
     if (locationId == 0) {
-      locationId = await insertLocation(latitude, longitude, uf, city);
+      locationId = await insertLocation(lat, lng, uf, city);
+    }
+
+    if (category == "Sou uma pessoa") {
+      category = "person"
     }
 
     const id = await insertUser(email, hashedPassword, name, age, category, undefined, locationId, undefined);
@@ -70,7 +74,7 @@ module.exports.login_post = async (req, res) => {
 
 module.exports.logout_get = async (req, res, decodedToken) => {
   
-  const token = req.headers.authorization;
+  //const token = req.headers.token;
 
   try {
     console.log("I am here");

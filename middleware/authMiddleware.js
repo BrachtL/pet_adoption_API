@@ -2,7 +2,8 @@ const jwt = require('jsonwebtoken');
 const { jwtSecret } = require('../configPar');
 
 const requireAuth = (req, res, next) => {
-  const token = req.headers.authorization
+  //const token = req.headers.authorization
+  const token = req.headers.token
   if(token) {
     jwt.verify(token, jwtSecret, (err, decodedToken) => {
       if(err) {
