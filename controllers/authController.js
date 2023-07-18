@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { jwtSecret } = require('../configPar');
-const { insertUser, getCredentials, getLocationId, insertLocation } = require('../Database/queries');
+const { insertUser, getUserData, getLocationId, insertLocation } = require('../Database/queries');
 
 module.exports.signup_post = async (req, res) => {
   
@@ -43,7 +43,7 @@ module.exports.login_post = async (req, res) => {
   const { email, password } = req.body;
   
   try {
-    const user = await getCredentials(email);
+    const user = await getUserData(email);
 
     if(user) {
       console.log("Start bcrypt.compare()");
@@ -54,7 +54,9 @@ module.exports.login_post = async (req, res) => {
         //send access token to the client
         const token = createToken(user.id);
         res.status(200).json({
-            message: token
+            token: token,
+            latitude: user.latitude,
+            longitude: user.longitude
           });
       } else {
         throw Error('incorrect password');

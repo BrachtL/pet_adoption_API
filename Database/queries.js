@@ -72,11 +72,16 @@ async function getLocationId(city, uf) {
 }
 
 //this query is only used to give the user a token. All the rest (getUser(id)) is done with the token
-async function getCredentials(email) {
+async function getUserData(email) {
   try {
     const connection = await pool.getConnection();
     const [results, fields] = await connection.query(`
-    SELECT id, email, password FROM users WHERE email = '${email}'`);
+    SELECT
+    users.id, users.email, users.password,
+    locations.latitude, locations.longitude
+    FROM users
+    JOIN locations ON users.id_location = locations.id
+    WHERE email = '${email}'`);
     connection.release();
     console.log('getCredentials() return:', results[0]);
     return results[0];
@@ -127,7 +132,7 @@ async function getPetsExceptMine(userId) {
 
 module.exports = {
   insertUser,
-  getCredentials,
+  getUserData,
   getLocationId,
   insertLocation,
   getPetsExceptMine
