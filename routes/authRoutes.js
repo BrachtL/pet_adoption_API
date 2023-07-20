@@ -15,7 +15,9 @@ router.get('/logout', requireAuth, authController.logout_get);
 
 
 //PETS
-router.get('/pets', requireAuth, petsController.pets_get)
+router.get('/pets', requireAuth, petsController.pets_get);
+router.post('/pets/like', requireAuth, petsController.like_pet_post);
+router.post('/pets/dislike', requireAuth, petsController.dislike_pet_post);
 
 const teste = process.env.BFT_DB_HOST;
 module.exports = { router, teste }

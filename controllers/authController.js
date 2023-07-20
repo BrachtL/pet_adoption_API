@@ -5,7 +5,7 @@ const { insertUser, getUserData, getLocationId, insertLocation } = require('../D
 
 module.exports.signup_post = async (req, res) => {
   
-  const { email, password, name, age, category, lat, lng, uf, city } = req.body;
+  let { email, password, name, age, category, lat, lng, uf, city } = req.body;
   //todo: validate strings email and password: length, special chars, etc. Here and in front-end. Here for security and front for usability
   //done: front end already validates fields
   

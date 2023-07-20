@@ -1,47 +1,23 @@
 //const bcrypt = require('bcrypt');
 //const jwt = require('jsonwebtoken');
 //const { jwtSecret } = require('../configPar');
-const { getPetsExceptMine } = require('../Database/queries');
+const { getPetsExceptMineLikedDisliked, setLikeRelation, setDislikeRelation } = require('../Database/queries');
 
 
 
 
 
-module.exports.pets_get = async (req, res, decodedToken) => {
+module.exports.pets_get = async (req, res) => {
 
   try {
     const userId = req.decodedToken.id;
-    const petsList = await getPetsExceptMine(userId);
+    const petsList = await getPetsExceptMineLikedDisliked(userId);
     console.log(petsList[0]);
     console.log(`petsList length = ${petsList.length}`);
 
     res.status(200).json({
       petsList: petsList
-    });
-
-
-
-
-    /*
-    if(user) {
-      console.log("Start bcrypt.compare()");
-      const auth = await bcrypt.compare(password, user.password);
-      console.log("Finish bcrypt.compare()");
-      console.log("AUTH: ", auth);
-      if(auth) {
-        //send access token to the client
-        const token = createToken(user.id);
-        res.status(200).json({
-            message: token
-          });
-      } else {
-        throw Error('incorrect password');
-      }
-    } else {
-      throw Error('incorrect email');
-    }
-    */
-    
+    });   
 
   } catch(e) {
 
@@ -49,4 +25,45 @@ module.exports.pets_get = async (req, res, decodedToken) => {
     res.status(400).json({message: e.toString()});
   }
 
+}
+
+//todo: implement this function
+module.exports.like_pet_post = async (req, res) => {
+
+  try {
+    const userId = req.decodedToken.id;
+    const petId = req.body.petId;
+    console.log(`LIKE petId -> ${petId}`);
+
+    const insertId = await setLikeRelation(userId, petId);
+
+    res.status(200).json({
+      message: "Success"
+    });
+
+  } catch(e) {
+
+    //res.status(400).json({});
+    res.status(400).json({message: e.toString()});
+  }
+}
+
+module.exports.dislike_pet_post = async (req, res) => {
+
+  try {
+    const userId = req.decodedToken.id;
+    const petId = req.body.petId;
+    console.log(`DISLIKE petId -> ${petId}`);
+
+    const insertId = await setDislikeRelation(userId, petId);
+
+    res.status(200).json({
+      message: "Success"
+    });
+
+  } catch(e) {
+
+    //res.status(400).json({});
+    res.status(400).json({message: e.toString()});
+  }
 }

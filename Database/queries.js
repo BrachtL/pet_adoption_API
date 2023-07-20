@@ -21,9 +21,9 @@ async function insertUser(
     connection.release();
 
     console.log(`
-    INSERT INTO users (id_location, email, name, age, password, description, image_url, category, creation_datetime) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-    [locationId, email, name, age, hashedPassword, description, imageUrl, category]);
+      INSERT INTO users (id_location, email, name, age, password, description, image_url, category, creation_datetime) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+      [locationId, email, name, age, hashedPassword, description, imageUrl, category]);
     console.log('insertUser() return:', results);
     return results.insertId;
   } catch (err) {
@@ -37,8 +37,8 @@ async function insertLocation(latitude, longitude, uf, city) {
   try {
     const connection = await pool.getConnection();
     const [results, fields] = await connection.query(`
-    INSERT INTO locations (latitude, longitude, uf, city) VALUES (?, ?, ?, ?)`,
-    [latitude, longitude, uf, city]);
+      INSERT INTO locations (latitude, longitude, uf, city) VALUES (?, ?, ?, ?)`,
+      [latitude, longitude, uf, city]);
     console.log('insertLocation() return:', results);
     connection.release();
     return results.insertId;
@@ -54,7 +54,7 @@ async function getLocationId(city, uf) {
   try {
     const connection = await pool.getConnection();
     const [results, fields] = await connection.query(`
-    SELECT id FROM locations WHERE city = '${city}' AND uf = '${uf}'`);
+      SELECT id FROM locations WHERE city = '${city}' AND uf = '${uf}'`);
     console.log('getLocationId() return:', results);
     connection.release();
     if (results.length > 0) {
@@ -76,12 +76,12 @@ async function getUserData(email) {
   try {
     const connection = await pool.getConnection();
     const [results, fields] = await connection.query(`
-    SELECT
-    users.id, users.email, users.password,
-    locations.latitude, locations.longitude
-    FROM users
-    JOIN locations ON users.id_location = locations.id
-    WHERE email = '${email}'`);
+      SELECT
+      users.id, users.email, users.password,
+      locations.latitude, locations.longitude
+      FROM users
+      JOIN locations ON users.id_location = locations.id
+      WHERE email = '${email}'`);
     connection.release();
     console.log('getCredentials() return:', results[0]);
     return results[0];
@@ -96,8 +96,8 @@ async function getUser(id) {
   try {
     const connection = await pool.getConnection();
     const [results, fields] = await connection.query(`
-    SELECT id, id_location, email, name, age, password, description, image_url, category
-    FROM users WHERE id = '${id}'`);
+      SELECT id, id_location, email, name, age, password, description, image_url, category
+      FROM users WHERE id = '${id}'`);
     connection.release();
     console.log('getUser() return:', results[0]);
     return results[0];
@@ -109,25 +109,78 @@ async function getUser(id) {
 }
 
 
-async function getPetsExceptMine(userId) {
+async function getPetsExceptMineLikedDisliked(userId) {
   try {
     const connection = await pool.getConnection();
+/*
     const [results, fields] = await connection.query(`
-    SELECT pets.id, pets.id_user, pets.id_location, pets.main_image_URL, pets.name, pets.birthday,
-    pets.species, pets.breed, pets.gender, pets.description, pets.creation_datetime,
-    locations.country, locations.uf, locations.city, locations.latitude, locations.longitude
-    FROM pets
-    JOIN locations ON pets.id_location = locations.id
-    WHERE pets.id_user != ?`, [userId]);
+      SELECT pets.id, pets.id_user, pets.id_location, pets.main_image_URL, pets.name, pets.birthday,
+      pets.species, pets.breed, pets.gender, pets.description, pets.creation_datetime,
+      locations.country, locations.uf, locations.city, locations.latitude, locations.longitude
+      FROM pets
+      JOIN locations ON pets.id_location = locations.id
+      WHERE pets.id_user != ?`, [userId]);
+*/
+
+    const [results, fields] = await connection.query(`SELECT pets.id, pets.id_user, pets.id_location, pets.main_image_URL, pets.name, pets.birthday,
+      pets.species, pets.breed, pets.gender, pets.description, pets.creation_datetime,
+      locations.country, locations.uf, locations.city, locations.latitude, locations.longitude
+      FROM pets
+      JOIN locations ON pets.id_location = locations.id
+      WHERE pets.id_user != ? 
+      AND pets.id NOT IN (
+        SELECT id_pet_liked
+        FROM user_liked_interactions
+        WHERE id_user = ?
+      )
+      AND pets.id NOT IN (
+        SELECT id_pet_disliked
+        FROM user_disliked_interactions
+        WHERE id_user = ?
+      );`, [userId, userId, userId]);
+
+
     connection.release();
-    console.log(`getPetsExceptMine(${userId}) return: ${results}`);
+    console.log(`getPetsExceptMineLikedDisliked(${userId}) return: ${JSON.stringify(results)}`);
     return results;
   } catch (err) {
-    console.log('Error querying database: getPetsExceptMine', err);
+    console.log('Error querying database: getPetsExceptMineLikedDisliked', err);
     console.log("THE MESSAGE IS:  ->> ", err.sqlMessage, " <<-");
     throw new Error(err.sqlMessage);
   }
 }
+
+  async function setLikeRelation(userId, petId) {
+    try {
+      const connection = await pool.getConnection();
+      const [results, fields] = await connection.query(`
+        INSERT INTO user_liked_interactions (id_user, id_pet_liked) VALUES (?, ?)`,
+        [userId, petId]);
+      connection.release();
+      console.log(`setLikeRelation(${userId}, ${petId}) return: ${JSON.stringify(results)}`);
+      return results.insertId;
+    } catch (err) {
+      console.log('Error querying database: setLikeRelation', err);
+      console.log("THE MESSAGE IS:  ->> ", err.sqlMessage, " <<-");
+      throw new Error(err.sqlMessage);
+    }
+  }
+
+  async function setDislikeRelation(userId, petId) {
+    try {
+      const connection = await pool.getConnection();
+      const [results, fields] = await connection.query(`
+        INSERT INTO user_disliked_interactions (id_user, id_pet_disliked) VALUES (?, ?)`,
+        [userId, petId]);
+      connection.release();
+      console.log(`setDislikeRelation(${userId}, ${petId}) return: ${JSON.stringify(results)}`);
+      return results.insertId;
+    } catch (err) {
+      console.log('Error querying database: setDislikeRelation', err);
+      console.log("THE MESSAGE IS:  ->> ", err.sqlMessage, " <<-");
+      throw new Error(err.sqlMessage);
+    }
+  }
 
 
 module.exports = {
@@ -135,5 +188,7 @@ module.exports = {
   getUserData,
   getLocationId,
   insertLocation,
-  getPetsExceptMine
+  getPetsExceptMineLikedDisliked,
+  setLikeRelation,
+  setDislikeRelation
 }
