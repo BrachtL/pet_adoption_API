@@ -182,6 +182,30 @@ async function getPetsExceptMineLikedDisliked(userId) {
     }
   }
 
+  async function getSecondaryImagesURL(petId) {
+    try {
+      const connection = await pool.getConnection();
+      const [results, fields] = await connection.query(`
+        SELECT url FROM secondary_images_url WHERE id_pet = ?`,
+        [petId]);
+      connection.release();
+      console.log(`getSecondaryImagesURL(${petId}) return: ${JSON.stringify(results)}`);
+      
+      let urlList = [];
+      results.forEach( element => {
+        urlList.push(element.url);
+      })
+      
+      console.log(`urlList: ${urlList}`);
+      
+      return urlList;
+    } catch (err) {
+      console.log('Error querying database: getSecondaryImagesURL', err);
+      console.log("THE MESSAGE IS:  ->> ", err.sqlMessage, " <<-");
+      throw new Error(err.sqlMessage);
+    }
+  }
+
 
 module.exports = {
   insertUser,
@@ -190,5 +214,6 @@ module.exports = {
   insertLocation,
   getPetsExceptMineLikedDisliked,
   setLikeRelation,
-  setDislikeRelation
+  setDislikeRelation,
+  getSecondaryImagesURL
 }
