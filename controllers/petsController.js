@@ -15,7 +15,7 @@ module.exports.pets_get = async (req, res) => {
     console.log(petsList[0]);
     console.log(`petsList length = ${petsList.length}`);
     
-    await getUrls(petsList);
+    await getUrlsAndFormatBirthday(petsList);
     console.log("after forEach: ", petsList[10]);
     console.log(`after forEach: petsList length = ${petsList.length}`);
 
@@ -31,9 +31,19 @@ module.exports.pets_get = async (req, res) => {
 
 }
 
-async function getUrls(petsList) {
+//todo: use try catch here is probably a good idea
+async function getUrlsAndFormatBirthday(petsList) {
   const promises = petsList.map(async (element) => {
     element.secondary_images_URL = await getSecondaryImagesURL(element.id);
+
+    const date = new Date(element.birthday);
+    const formattedDate = date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    //element.birthday = formattedDate.replace(/-/g, "/");
+    element.birthday = formattedDate;
     return element;
   });
 
