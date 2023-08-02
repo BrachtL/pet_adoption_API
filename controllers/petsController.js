@@ -1,7 +1,7 @@
 //const bcrypt = require('bcrypt');
 //const jwt = require('jsonwebtoken');
 //const { jwtSecret } = require('../configPar');
-const { getPetsExceptMineLikedDisliked, setLikeRelation, setDislikeRelation, getSecondaryImagesURL } = require('../Database/queries');
+const { getPetsExceptMineLikedDisliked, setLikeRelation, setDislikeRelation, getSecondaryImagesURL, getLikedPets } = require('../Database/queries');
 
 
 
@@ -92,3 +92,30 @@ module.exports.dislike_pet_post = async (req, res) => {
     res.status(400).json({message: e.toString()});
   }
 }
+
+
+module.exports.pets_grid_get = async (req, res) => {
+
+  try {
+    const userId = req.decodedToken.id;
+    const petsLikedList = await getLikedPets(userId);
+    console.log(petsLikedList[0]);
+    console.log(`petsLikedList length = ${petsLikedList.length}`);
+    
+    await getUrlsAndFormatBirthday(petsLikedList);
+    console.log("after forEach: ", petsLikedList[0]);
+    console.log(`after forEach: petsLikedList length = ${petsLikedList.length}`);
+
+    res.status(200).json({
+      petsList: petsLikedList
+    });   
+
+  } catch(e) {
+
+    //res.status(400).json({});
+    res.status(400).json({message: e.toString()});
+  }
+
+}
+
+

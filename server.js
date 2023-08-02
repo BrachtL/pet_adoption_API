@@ -6,10 +6,10 @@ require('dotenv').config()
 //middleware (ponte entre requests)
 app.use(express.json());
 
-const authRoutes = require('./routes/authRoutes').router
-app.use(authRoutes);
+const routes = require('./routes/routes').router
+app.use(routes);
 
-const teste = require('./routes/authRoutes').teste;
+const teste = require('./routes/routes').teste;
 console.log("teste -> " + teste);
 
 // Function to handle unexpected errors

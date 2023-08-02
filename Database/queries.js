@@ -206,6 +206,30 @@ async function getPetsExceptMineLikedDisliked(userId) {
     }
   }
 
+  //CHECK THIS QUERY!
+  async function getLikedPets(userId) {
+    try {
+      const connection = await pool.getConnection();
+  
+      const [results, fields] = await connection.query(`SELECT pets.id, pets.id_user, pets.id_location, pets.main_image_URL, pets.name, pets.birthday,
+        pets.species, pets.breed, pets.gender, pets.description, pets.creation_datetime,
+        locations.country, locations.uf, locations.city, locations.latitude, locations.longitude
+        FROM pets
+        JOIN locations ON pets.id_location = locations.id
+        JOIN user_liked_interactions ON pets.id = user_liked_interactions.id_pet_liked
+        WHERE user_liked_interactions.id_user = ?;`, [userId]);
+  
+  
+      connection.release();
+      console.log(`getLikedPets(${userId}) return: ${JSON.stringify(results)}`);
+      return results;
+    } catch (err) {
+      console.log('Error querying database: getLikedPets', err);
+      console.log("THE MESSAGE IS:  ->> ", err.sqlMessage, " <<-");
+      throw new Error(err.sqlMessage);
+    }
+  }
+
 
 module.exports = {
   insertUser,
@@ -215,5 +239,6 @@ module.exports = {
   getPetsExceptMineLikedDisliked,
   setLikeRelation,
   setDislikeRelation,
-  getSecondaryImagesURL
+  getSecondaryImagesURL,
+  getLikedPets
 }
