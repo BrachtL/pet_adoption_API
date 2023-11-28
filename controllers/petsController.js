@@ -1,11 +1,37 @@
 //const bcrypt = require('bcrypt');
 //const jwt = require('jsonwebtoken');
 //const { jwtSecret } = require('../configPar');
-const { getPetsExceptMineLikedDisliked, setLikeRelation, setDislikeRelation, getSecondaryImagesURL, getLikedPets } = require('../Database/queries');
+const { getPetsExceptMineLikedDisliked, setLikeRelation, setDislikeRelation, getSecondaryImagesURL, getLikedPets, getBreeds } = require('../Database/queries');
 
 
 
+module.exports.pet_breeds_get = async (req, res) => {
+  try {
+    const breedsList = await getBreeds();
+    console.log("pet breeds: ", JSON.stringify(breedsList));
+    console.log(`breedsList length = ${breedsList.length}`);
+    
+    res.status(200).json(
+      breedsList
+    );   
 
+  } catch(e) {
+
+    //res.status(400).json({});
+    res.status(400).json({message: e.toString()});
+  }
+}
+
+module.exports.pet_create_post = async (req, res) => {
+  try {
+    console.log(JSON.stringify(req.body))
+    res.status(200).json({
+      message: "It is ok"
+    });   
+  } catch(e) {
+    res.status(400).json({message: e.toString()});
+  }
+}
 
 module.exports.pets_get = async (req, res) => {
 
@@ -31,6 +57,7 @@ module.exports.pets_get = async (req, res) => {
 
 }
 
+//todo: the best is probably to delete it and deal with it on client (resource management). Check it on stress test.
 //todo: use try catch here is probably a good idea
 async function getUrlsAndFormatBirthday(petsList) {
   const promises = petsList.map(async (element) => {

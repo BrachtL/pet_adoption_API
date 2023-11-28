@@ -1,5 +1,24 @@
 const pool = require('./dbConfig');
 
+
+
+async function getBreeds() {
+  try {
+    const connection = await pool.getConnection();
+    const [results, fields] = await connection.query(`
+      SELECT id, breed, species
+      FROM breeds
+      `);
+    connection.release();
+    console.log('getBreeds() return:', results);
+    return results;
+  } catch (err) {
+    console.log('Error querying database: getBreeds', err);
+    console.log("THE MESSAGE IS:  ->> ", err.sqlMessage, " <<-");
+    throw new Error(err.sqlMessage);
+  }
+}
+
 //todo: changed the commented lines
 async function insertUser(
   email, hashedPassword, name, age, category, description, locationId,
@@ -240,5 +259,6 @@ module.exports = {
   setLikeRelation,
   setDislikeRelation,
   getSecondaryImagesURL,
-  getLikedPets
+  getLikedPets,
+  getBreeds
 }

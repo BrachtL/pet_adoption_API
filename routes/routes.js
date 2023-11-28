@@ -19,6 +19,9 @@ router.get('/pets', requireAuth, petsController.pets_get);
 router.post('/pets/like', requireAuth, petsController.like_pet_post);
 router.post('/pets/dislike', requireAuth, petsController.dislike_pet_post);
 router.get('/pets/grid', requireAuth, petsController.pets_grid_get);
+router.post('/pets/create', requireAuth, petsController.pet_create_post);
+router.get('/pets/breeds', requireAuth, petsController.pet_breeds_get);
+
 
 
 const teste = process.env.BFT_DB_HOST;
