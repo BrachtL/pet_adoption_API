@@ -1,8 +1,12 @@
 //const bcrypt = require('bcrypt');
 //const jwt = require('jsonwebtoken');
 //const { jwtSecret } = require('../configPar');
-const { getPetsExceptMineLikedDisliked, setLikeRelation, setDislikeRelation, getSecondaryImagesURL, getLikedPets, getBreeds } = require('../Database/queries');
+const { getPetsExceptMineLikedDisliked, setLikeRelation, setDislikeRelation, getSecondaryImagesURL, getLikedPets, getBreeds, insertLocation, 
+  getUserLocation, insertNewPet, setNewPetSecondaryImagesUrls } = require('../Database/queries');
 
+//todo: make a resource that pick public ids from public_ids_stored_on_cloudinary (except for the ones included until last week, for instance)
+//and check against all public ids currently being used (from pets, users and secondary_images_url). Then send the remained IDs to be deleted from cloudinary
+//client should not be concerned about it.
 
 
 module.exports.pet_breeds_get = async (req, res) => {
@@ -24,10 +28,51 @@ module.exports.pet_breeds_get = async (req, res) => {
 
 module.exports.pet_create_post = async (req, res) => {
   try {
-    console.log(JSON.stringify(req.body))
+    console.log(JSON.stringify(req.body));
+    //todo: remove public ids from to delete on DB
+    //todo: before it I have to sent them to "to delete" from client
+
+    const petData = req.body;
+
+    const userId = req.decodedToken.id;
+    console.log(userId);
+
+    var locationId = 0;
+    //todo: ask country here when it makes sense
+    if(petData.latitude && petData.longitude && petData.uf && petData.city) {
+      /*
+      locationId = await getLocationId(city, uf);
+      if(locationId == 0) {
+        locationId = await insertLocation(petData.latitude, petData.longitude, petData.uf, petData.city);
+      }
+      */
+    } else {
+      locationId = await getUserLocation(userId);
+    }
+
+    var birthday = transformDateFormat(petData.birthday);
+    
+    //todo: make this query
+    const newPetId = await insertNewPet(
+      userId,
+      locationId,
+      petData.profile_photo_data.url,
+      petData.name,
+      birthday,
+      petData.species, //todo: change those 2 (species and breed) to breedId
+      petData.breed,  //delete those 2 fields from DB and update client new pet sent data
+      petData.gender,
+      petData.description,
+      petData.profile_photo_data.publicId
+    );
+
+    const idList = await setNewPetSecondaryImagesUrls(newPetId, petData.album_photo_data_list);
+    
+    //todo: send new pet id instead of a message. I will need it to redirect to the pet view on client
     res.status(200).json({
-      message: "It is ok"
-    });   
+      message: "Success"
+    });
+  
   } catch(e) {
     res.status(400).json({message: e.toString()});
   }
@@ -76,6 +121,14 @@ async function getUrlsAndFormatBirthday(petsList) {
 
   // Wait for all promises to resolve
   return Promise.all(promises);
+}
+
+function transformDateFormat(brazilianDate) {
+  //transform dd/mm/yyyy into yyyy-mm-dd
+  var parts = brazilianDate.split('/');
+  var transformedDate = parts[2] + '-' + parts[1] + '-' + parts[0];
+
+  return transformedDate;
 }
 
 

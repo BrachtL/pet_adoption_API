@@ -2,6 +2,90 @@ const pool = require('./dbConfig');
 
 
 
+async function setNewPetSecondaryImagesUrls(newPetId, secondaryPhotoDataList) {
+  try {
+    const connection = await pool.getConnection();
+    
+    let resultsList = [];
+    
+    for(let k = 0; k < secondaryPhotoDataList.length; k++) {
+      const [results, fields] = await connection.query(`
+      INSERT INTO secondary_images_url (id_pet, url, image_public_id) 
+      VALUES (?, ?, ?)`,
+      [newPetId, secondaryPhotoDataList[k].url, secondaryPhotoDataList[k].publicId]); 
+
+      console.log(`
+      INSERT INTO sencondary_images_url (id_pet, url, image_public_id) 
+      VALUES (?, ?, ?)`,
+      [newPetId, secondaryPhotoDataList[k].url, secondaryPhotoDataList[k].publicId]); 
+      resultsList[k] = results;
+    }
+   
+    connection.release();
+
+    console.log('setNewPetSecondaryImagesUrls() return:', resultsList);
+    return resultsList;
+  } catch (err) {
+    console.log('Error querying database: setNewPetSecondaryImagesUrls', err);
+    console.log("A MENSAGEM É:  ->> ", err.sqlMessage, " <<-");
+    throw new Error(err.sqlMessage);
+  }
+}
+
+async function insertNewPet(
+  userId,
+  locationId,
+  profilePhotoDataUrl,
+  name,
+  birthday,
+  species, //todo: change those 2 (species and breed) to breedId
+  breed,  //delete those 2 fields from DB and update client new pet sent data
+  gender,
+  description,
+  profilePhotoDataPublicId
+) {
+  try {
+    const connection = await pool.getConnection();
+    
+    const [results, fields] = await connection.query(`
+      INSERT INTO pets (id_user, id_location, main_image_URL, name, birthday, species, breed, 
+        gender, description, image_public_id, creation_datetime) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+      [userId, locationId, profilePhotoDataUrl, name, birthday, species, breed, 
+        gender, description, profilePhotoDataPublicId]);    
+    connection.release();
+
+    console.log(`
+    INSERT INTO pets (id_user, id_location, main_image_URL, name, birthday, species, breed, 
+      gender, description, image_public_id, creation_datetime) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+    [userId, locationId, profilePhotoDataUrl, name, birthday, species, breed, 
+      gender, description, profilePhotoDataPublicId]);  
+    console.log('insertNewPet() return:', results);
+    return results.insertId;
+  } catch (err) {
+    console.log('Error querying database: insertNewPet', err);
+    console.log("A MENSAGEM É:  ->> ", err.sqlMessage, " <<-");
+    throw new Error(err.sqlMessage);
+  }
+}
+
+async function getUserLocation(userId) {
+  try {
+    const connection = await pool.getConnection();
+    const [results, fields] = await connection.query(`
+      SELECT id_location FROM users
+      WHERE id = '${userId}'`);
+    connection.release();
+    console.log('getCredentials() return:', results[0].id_location);
+    return results[0].id_location;
+  } catch (err) {
+    console.log(`Error querying database: getUserLocation(${userId})`, err);
+    console.log("THE MESSAGE IS:  ->> ", err.sqlMessage, " <<-");
+    throw new Error(err.sqlMessage);
+  }
+}
+
 async function getBreeds() {
   try {
     const connection = await pool.getConnection();
@@ -260,5 +344,8 @@ module.exports = {
   setDislikeRelation,
   getSecondaryImagesURL,
   getLikedPets,
-  getBreeds
+  getBreeds,
+  getUserLocation,
+  insertNewPet,
+  setNewPetSecondaryImagesUrls
 }
