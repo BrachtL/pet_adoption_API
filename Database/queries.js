@@ -1,6 +1,25 @@
 const pool = require('./dbConfig');
 
 
+async function insertMessage(senderId, recipientId, content) {
+  try {
+
+    const connection = await pool.getConnection();
+
+    const [results, fields] = await connection.query('INSERT INTO messages (id_sender, id_recipient, content, creation_datetime) VALUES (?, ?, ?, CURRENT_TIMESTAMP)', [senderId, recipientId, content]);
+    console.log(`insertMessage(${senderId}, ${recipientId}, ${content}) -> results: ${results.id}`);
+
+    connection.release();
+
+    return results.id
+    
+  } catch (err) {
+    console.log('Error querying database: insertMessage', err);
+    console.log("A MENSAGEM É:  ->> ", err.sqlMessage, " <<-");
+    throw new Error(err.sqlMessage);
+  }
+}
+
 
 async function setNewPetSecondaryImagesUrls(newPetId, secondaryPhotoDataList) {
   try {
@@ -347,5 +366,6 @@ module.exports = {
   getBreeds,
   getUserLocation,
   insertNewPet,
-  setNewPetSecondaryImagesUrls
+  setNewPetSecondaryImagesUrls,
+  insertMessage
 }

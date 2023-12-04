@@ -5,20 +5,40 @@
 <body>
   <ul id="messages"></ul>
   <form id="form" action="">
-    <input id="m" autocomplete="off" /><button>Send</button>
+    <label for="senderId">Sender ID:</label>
+    <input type="text" id="senderId" autocomplete="off" />
+    <label for="recipientId">Recipient ID:</label>
+    <input type="text" id="recipientId" autocomplete="off" />
+    <input id="m" autocomplete="off" />
+    <button>Send</button>
   </form>
-  <script src="https://cdn.socket.io/4.1.2/socket.io.min.js"></script>
-  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
   <script>
-    $(function () {
-      var socket = io();
-      $('form').submit(function () { 
-        socket.emit('chat message', $('#m').val());
-        $('#m').val('');
-        return false;
+    document.addEventListener('DOMContentLoaded', function () {
+      // Replace "wss://your-node-server-address" with your actual WebSocket server address
+      var webSocket = new WebSocket("wss://pet-adoption-api.glitch.me");
+
+      // Register with a user ID when connecting
+      webSocket.addEventListener('open', function () {
+        var token = prompt('Enter your user ID:');
+        webSocket.send(JSON.stringify({ type: 'register', token }));
       });
-      socket.on('chat message', function (msg) {
-        $('#messages').append($('<li>').text(msg));
+
+      document.getElementById('form').addEventListener('submit', function (event) {
+        event.preventDefault();
+        var messageData = {
+          type: "private message",
+          senderId: document.getElementById('senderId').value,
+          recipientId: document.getElementById('recipientId').value,
+          content: document.getElementById('m').value
+        };
+        webSocket.send(JSON.stringify(messageData));
+        document.getElementById('m').value = '';
+      });
+
+      // Listen for 'private message' instead of 'chat message'
+      webSocket.addEventListener('message', function (event) {
+        var msg = JSON.parse(event.data);
+        document.getElementById('messages').innerHTML += '<li>' + msg.content + '</li>';
       });
     });
   </script>
