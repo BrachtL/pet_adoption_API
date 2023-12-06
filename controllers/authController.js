@@ -27,8 +27,10 @@ module.exports.signup_post = async (req, res) => {
     //const token = createToken(id);
     console.log("id -> ", id);
     
+    const token = createToken(id);
+    
     res.status(200).json({
-        //"token": token
+        "token": token,
         "message": "Success"
       });
   } catch(e) {
@@ -89,7 +91,9 @@ module.exports.logout_get = async (req, res, decodedToken) => {
 }
 
 function createToken(id) {
-  return jwt.sign({id: id}, jwtSecret, {
-    expiresIn: 30 * 60 //30 min in secs
+  return jwt.sign({ id: id }, jwtSecret, {
+    expiresIn: 60 * 60 * 24 * 7 // 7 days in seconds
   });
-}
+};
+exports.createToken = createToken;
+

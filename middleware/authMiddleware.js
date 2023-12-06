@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { jwtSecret } = require('../configPar');
+const createToken  = require('../controllers/authController').createToken
 
 const requireAuth = (req, res, next) => {
   try {
@@ -13,6 +14,14 @@ const requireAuth = (req, res, next) => {
         } else {
           console.log("decodedToken: ", decodedToken);
           console.log("DATE NOW: ", Math.floor(Date.now() / 1000));
+          const timeLeftInSec = (decodedToken.exp - Math.floor(Date.now() / 1000));
+          console.log("token time left: ", decodedToken.exp - Math.floor(Date.now() / 1000));
+          if(timeLeftInSec < 432000) { //5 days in sec
+            const newToken = createToken(decodedToken.id);
+            console.log("newToken -> ", newToken);
+            req.headers.token = newToken;
+          }
+          //in the future: todo: send the old token to blacklist when create a new one
           req.decodedToken = decodedToken;
           next();
         }

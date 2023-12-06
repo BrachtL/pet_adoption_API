@@ -50,13 +50,12 @@ const userSockets = new Map();
 wss.on('connection', (webSocket) => {
   console.log('A user connected');
 
-  // Handle message and registration
+  // Handle user registration with an ID
   webSocket.on('message', async (data) => {
     console.log(JSON.parse(data));
     
     const { type, token, userId, senderId, recipientId, content } = JSON.parse(data);
 
-    // Handle user registration with an ID
     if (type === 'register') {
       if (!token) {
         console.log('socket connection attempted without a token');
@@ -84,7 +83,6 @@ wss.on('connection', (webSocket) => {
         userSockets.set(userId.toString(), webSocket);
       }
 
-      // Handle message
     } else if (type === 'private message') {
       console.log(`Message from ${senderId} to ${recipientId}: ${content}`);
 
@@ -102,6 +100,16 @@ wss.on('connection', (webSocket) => {
         // todo: in this case, use firebase to push a notification
       }
     }
+  });
+  
+  // Handle ping frames to keep the connection alive
+  webSocket.on('ping', () => {
+    userSockets.forEach((socket, userId) => {
+      if (socket === webSocket) {
+        console.log('Received ping frame from ' + userId);
+      }
+    });
+    webSocket.pong(); // Respond with a pong frame
   });
 
   // Handle disconnection

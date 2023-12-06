@@ -11,13 +11,15 @@ const { getPetsExceptMineLikedDisliked, setLikeRelation, setDislikeRelation, get
 
 module.exports.pet_breeds_get = async (req, res) => {
   try {
+    const token = req.headers.token;
     const breedsList = await getBreeds();
     console.log("pet breeds: ", JSON.stringify(breedsList));
     console.log(`breedsList length = ${breedsList.length}`);
     
-    res.status(200).json(
-      breedsList
-    );   
+    res.status(200).json({
+      breedsList: breedsList,
+      token: token
+    });   
 
   } catch(e) {
 
@@ -28,6 +30,7 @@ module.exports.pet_breeds_get = async (req, res) => {
 
 module.exports.pet_create_post = async (req, res) => {
   try {
+    const token = req.headers.token;
     console.log(JSON.stringify(req.body));
     //todo: remove public ids from to delete on DB
     //todo: before it I have to sent them to "to delete" from client
@@ -70,7 +73,8 @@ module.exports.pet_create_post = async (req, res) => {
     
     //todo: send new pet id instead of a message. I will need it to redirect to the pet view on client
     res.status(200).json({
-      message: "Success"
+      message: "Success",
+      token: token
     });
   
   } catch(e) {
@@ -81,6 +85,7 @@ module.exports.pet_create_post = async (req, res) => {
 module.exports.pets_get = async (req, res) => {
 
   try {
+    const token = req.headers.token;
     const userId = req.decodedToken.id;
     const petsList = await getPetsExceptMineLikedDisliked(userId);
     console.log(petsList[0]);
@@ -91,7 +96,8 @@ module.exports.pets_get = async (req, res) => {
     console.log(`after forEach: petsList length = ${petsList.length}`);
 
     res.status(200).json({
-      petsList: petsList
+      petsList: petsList,
+      token: token
     });   
 
   } catch(e) {
@@ -136,6 +142,7 @@ function transformDateFormat(brazilianDate) {
 module.exports.like_pet_post = async (req, res) => {
 
   try {
+    const token = req.headers.token;
     const userId = req.decodedToken.id;
     const petId = req.body.petId;
     console.log(`LIKE petId -> ${petId}`);
@@ -143,7 +150,8 @@ module.exports.like_pet_post = async (req, res) => {
     const insertId = await setLikeRelation(userId, petId);
 
     res.status(200).json({
-      message: "Success"
+      message: "Success",
+      token: token
     });
 
   } catch(e) {
@@ -156,6 +164,7 @@ module.exports.like_pet_post = async (req, res) => {
 module.exports.dislike_pet_post = async (req, res) => {
 
   try {
+    const token = req.headers.token;
     const userId = req.decodedToken.id;
     const petId = req.body.petId;
     console.log(`DISLIKE petId -> ${petId}`);
@@ -163,7 +172,8 @@ module.exports.dislike_pet_post = async (req, res) => {
     const insertId = await setDislikeRelation(userId, petId);
 
     res.status(200).json({
-      message: "Success"
+      message: "Success",
+      token: token
     });
 
   } catch(e) {
@@ -177,6 +187,7 @@ module.exports.dislike_pet_post = async (req, res) => {
 module.exports.pets_grid_get = async (req, res) => {
 
   try {
+    const token = req.headers.token;
     const userId = req.decodedToken.id;
     const petsLikedList = await getLikedPets(userId);
     console.log(petsLikedList[0]);
@@ -187,7 +198,8 @@ module.exports.pets_grid_get = async (req, res) => {
     console.log(`after forEach: petsLikedList length = ${petsLikedList.length}`);
 
     res.status(200).json({
-      petsList: petsLikedList
+      petsList: petsLikedList,
+      token: token
     });   
 
   } catch(e) {
