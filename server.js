@@ -54,7 +54,9 @@ wss.on('connection', (webSocket) => {
   webSocket.on('message', async (data) => {
     console.log(JSON.parse(data));
     
-    const { type, token, userId, senderId, recipientId, content } = JSON.parse(data);
+    let { type, token, senderId, recipientId, content } = JSON.parse(data);
+    //todo: change the way I deal witn token and senderId vars. I am shadowing them, they should be const.
+    //maybe change the MessageModel on client too
 
     if (type === 'register') {
       if (!token) {
@@ -78,16 +80,45 @@ wss.on('connection', (webSocket) => {
           userSockets.set(userId.toString(), webSocket);
         });
       } else {
+        //this is here just for tests
         const userId = token;
         console.log(`User registered: ${userId}`);
         userSockets.set(userId.toString(), webSocket);
       }
 
     } else if (type === 'private message') {
+
+      token = senderId;
+
+      if (!token) {
+        console.log('socket connection attempted without a token');
+        webSocket.close();
+        return;
+      }
+
+      //this allows me to use the html to test without a token, sending the id directly
+      if(token.length > 3) {
+
+        jwt.verify(token, jwtSecret, (err, decoded) => {
+          if (err) {
+            webSocket.close();
+            return;
+          }
+
+          senderId = decoded.id;
+        });
+      } else {
+        //this is here just for tests
+        senderId = token;
+      }
+
       console.log(`Message from ${senderId} to ${recipientId}: ${content}`);
 
       // Persist the message to the database
-      const idMessage = await insertMessage(senderId, recipientId, content);
+      const currentDateTime = new Date();
+      currentDateTime.setHours(currentDateTime.getHours() - 3);
+      const formattedDateTime = currentDateTime.toISOString().slice(0, 19).replace('T', ' ');
+      const idMessage = await insertMessage(senderId, recipientId, content, formattedDateTime);
 
       // Retrieve the target user's WebSocket and send the message
       const targetSocket = userSockets.get(recipientId);

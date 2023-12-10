@@ -1,17 +1,43 @@
 const pool = require('./dbConfig');
 
 
-async function insertMessage(senderId, recipientId, content) {
+async function getChatMessages(id1, id2) {
+  try {
+    const connection = await pool.getConnection();
+
+    const [results, fields] = await connection.query(
+      `SELECT id, id_sender, id_recipient, content, creation_datetime
+      FROM messages
+      WHERE (id_sender = ? OR id_sender = ?) AND (id_recipient = ? OR id_recipient = ?)
+      ORDER BY creation_datetime DESC`, 
+      [id1, id2, id1, id2]
+    );
+    console.log(`getChatMessages(${id1}, ${id2})[0] -> results: ${JSON.stringify(results[0])}`);
+
+    connection.release();
+
+    return results;
+  } catch(err) {
+    console.log('Error querying database: getChatMessages', err);
+    console.log("A MENSAGEM É:  ->> ", err.sqlMessage, " <<-");
+    throw new Error(err.sqlMessage);
+  }
+}
+
+async function insertMessage(senderId, recipientId, content, currentTime) {
   try {
 
     const connection = await pool.getConnection();
 
-    const [results, fields] = await connection.query('INSERT INTO messages (id_sender, id_recipient, content, creation_datetime) VALUES (?, ?, ?, CURRENT_TIMESTAMP)', [senderId, recipientId, content]);
-    console.log(`insertMessage(${senderId}, ${recipientId}, ${content}) -> results: ${results.id}`);
+    const [results, fields] = await connection.query(
+      'INSERT INTO messages (id_sender, id_recipient, content, creation_datetime) VALUES (?, ?, ?, ?)', 
+      [senderId, recipientId, content, currentTime]
+    );
+    console.log(`insertMessage(${senderId}, ${recipientId}, ${content}, ${currentTime}) -> results: ${JSON.stringify(results.insertId)}`);
 
     connection.release();
 
-    return results.id
+    return results.insertId;
     
   } catch (err) {
     console.log('Error querying database: insertMessage', err);
@@ -214,17 +240,17 @@ async function getUserData(email) {
   }
 }
 
-async function getUser(id) {
+async function getPublicUserData(id) {
   try {
     const connection = await pool.getConnection();
     const [results, fields] = await connection.query(`
-      SELECT id, id_location, email, name, age, password, description, image_url, category
+      SELECT id, id_location, email, name, age, description, image_url, category, creation_datetime, image_public_id, last_online_datetime
       FROM users WHERE id = '${id}'`);
     connection.release();
-    console.log('getUser() return:', results[0]);
+    console.log('getPublicUserData() return:', results[0]);
     return results[0];
   } catch (err) {
-    console.log('Error querying database: getUser', err);
+    console.log('Error querying database: getPublicUserData', err);
     console.log("THE MESSAGE IS:  ->> ", err.sqlMessage, " <<-");
     throw new Error(err.sqlMessage);
   }
@@ -367,5 +393,7 @@ module.exports = {
   getUserLocation,
   insertNewPet,
   setNewPetSecondaryImagesUrls,
-  insertMessage
+  insertMessage,
+  getPublicUserData,
+  getChatMessages
 }

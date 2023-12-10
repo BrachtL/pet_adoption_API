@@ -2,6 +2,7 @@ const { Router } = require('express');
 const authController = require('../controllers/authController');
 const { requireAuth } = require('../middleware/authMiddleware');
 const petsController = require('../controllers/petsController');
+const userController = require('../controllers/userController');
 
 //todo: change this file name to routes.js
 
@@ -21,6 +22,7 @@ router.post('/pets/dislike', requireAuth, petsController.dislike_pet_post);
 router.get('/pets/grid', requireAuth, petsController.pets_grid_get);
 router.post('/pets/create', requireAuth, petsController.pet_create_post);
 router.get('/pets/breeds', requireAuth, petsController.pet_breeds_get);
+router.get('/chat', requireAuth, userController.user_chat_get);
 
 
 
