@@ -19,10 +19,11 @@ router.get('/logout', requireAuth, authController.logout_get);
 router.get('/pets', requireAuth, petsController.pets_get);
 router.post('/pets/like', requireAuth, petsController.like_pet_post);
 router.post('/pets/dislike', requireAuth, petsController.dislike_pet_post);
-router.get('/pets/grid', requireAuth, petsController.pets_grid_get);
+router.get('/pets/grid', requireAuth, petsController.pets_grid_get); //todo: change this route name to pets/liked
 router.post('/pets/create', requireAuth, petsController.pet_create_post);
 router.get('/pets/breeds', requireAuth, petsController.pet_breeds_get);
 router.get('/chat', requireAuth, userController.user_chat_get);
+router.get('/pets/donating', requireAuth, petsController.donating_get);
 
 
 

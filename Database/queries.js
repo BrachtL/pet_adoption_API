@@ -354,7 +354,35 @@ async function getPetsExceptMineLikedDisliked(userId) {
     }
   }
 
-  //CHECK THIS QUERY!
+  async function getDonatingPetsById(userId) {
+    try {
+      const connection = await pool.getConnection();
+  
+      const [results, fields] = await connection.query(`
+        SELECT pets.id, pets.id_user, pets.id_location, pets.main_image_URL, pets.name, pets.birthday, pets.species, pets.breed, pets.gender,
+          pets.description, pets.creation_datetime, locations.country, locations.uf, locations.city, locations.latitude, locations.longitude,
+        GROUP_CONCAT(DISTINCT user_liked_interactions.id_user) AS liked_user_ids, GROUP_CONCAT(DISTINCT secondary_images_url.url) AS secondary_images_URL_string
+        FROM pets
+        JOIN locations ON pets.id_location = locations.id
+        LEFT JOIN user_liked_interactions ON pets.id = user_liked_interactions.id_pet_liked
+        LEFT JOIN secondary_images_url ON pets.id = secondary_images_url.id_pet
+        WHERE pets.id_user = ?
+        GROUP BY pets.id;`, [userId]
+      );
+
+      //TODO -> use this same concept to refactor this and the getLikedPets(userId) query in order not to need to retrieve the urls one by one anymore!
+  
+      connection.release();
+      console.log(`getDonatingPetsById(${userId}) return: ${JSON.stringify(results)}`);
+      return results;
+    } catch (err) {
+      console.log('Error querying database: getDonatingPetsById', err);
+      console.log("THE MESSAGE IS:  ->> ", err.sqlMessage, " <<-");
+      throw new Error(err.sqlMessage);
+    }
+  }
+
+  //TODO: CHECK THIS QUERY!
   async function getLikedPets(userId) {
     try {
       const connection = await pool.getConnection();
@@ -395,5 +423,6 @@ module.exports = {
   setNewPetSecondaryImagesUrls,
   insertMessage,
   getPublicUserData,
-  getChatMessages
+  getChatMessages,
+  getDonatingPetsById
 }

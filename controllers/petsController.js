@@ -2,12 +2,31 @@
 //const jwt = require('jsonwebtoken');
 //const { jwtSecret } = require('../configPar');
 const { getPetsExceptMineLikedDisliked, setLikeRelation, setDislikeRelation, getSecondaryImagesURL, getLikedPets, getBreeds, insertLocation, 
-  getUserLocation, insertNewPet, setNewPetSecondaryImagesUrls } = require('../Database/queries');
+  getUserLocation, insertNewPet, setNewPetSecondaryImagesUrls, getDonatingPetsById } = require('../Database/queries');
 
 //todo: make a resource that pick public ids from public_ids_stored_on_cloudinary (except for the ones included until last week, for instance)
 //and check against all public ids currently being used (from pets, users and secondary_images_url). Then send the remained IDs to be deleted from cloudinary
 //client should not be concerned about it.
 
+module.exports.donating_get = async (req, res) => {
+  try {
+    const token = req.headers.token;
+    const userId = req.decodedToken.id;
+    
+    const petsList = await getDonatingPetsById(userId);
+    console.log("petsList: ", JSON.stringify(petsList));
+    console.log(`petsList length = ${petsList.length}`);
+    
+    res.status(200).json({
+      petsList: petsList,
+      token: token
+    });   
+
+  } catch(e) {
+    //res.status(400).json({});
+    res.status(400).json({message: e.toString()});
+  }
+}
 
 module.exports.pet_breeds_get = async (req, res) => {
   try {
@@ -113,6 +132,7 @@ module.exports.pets_get = async (req, res) => {
 async function getUrlsAndFormatBirthday(petsList) {
   const promises = petsList.map(async (element) => {
     element.secondary_images_URL = await getSecondaryImagesURL(element.id);
+    //todo: remove this getUrl from here and add on the query!
 
     const date = new Date(element.birthday);
     const formattedDate = date.toLocaleDateString("en-GB", {
