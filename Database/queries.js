@@ -272,9 +272,11 @@ async function getPetsExceptMineLikedDisliked(userId) {
 
     const [results, fields] = await connection.query(`SELECT pets.id, pets.id_user, pets.id_location, pets.main_image_URL, pets.name, pets.birthday,
       pets.species, pets.breed, pets.gender, pets.description, pets.creation_datetime,
-      locations.country, locations.uf, locations.city, locations.latitude, locations.longitude
+      locations.country, locations.uf, locations.city, locations.latitude, locations.longitude,
+      GROUP_CONCAT(DISTINCT secondary_images_url.url) AS secondary_images_URL_string
       FROM pets
       JOIN locations ON pets.id_location = locations.id
+      LEFT JOIN secondary_images_url ON pets.id = secondary_images_url.id_pet
       WHERE pets.id_user != ? 
       AND pets.id NOT IN (
         SELECT id_pet_liked
@@ -285,7 +287,8 @@ async function getPetsExceptMineLikedDisliked(userId) {
         SELECT id_pet_disliked
         FROM user_disliked_interactions
         WHERE id_user = ?
-      );`, [userId, userId, userId]);
+      )
+      GROUP BY pets.id;`, [userId, userId, userId]);
 
 
     connection.release();
@@ -389,11 +392,14 @@ async function getPetsExceptMineLikedDisliked(userId) {
   
       const [results, fields] = await connection.query(`SELECT pets.id, pets.id_user, pets.id_location, pets.main_image_URL, pets.name, pets.birthday,
         pets.species, pets.breed, pets.gender, pets.description, pets.creation_datetime,
-        locations.country, locations.uf, locations.city, locations.latitude, locations.longitude
+        locations.country, locations.uf, locations.city, locations.latitude, locations.longitude,
+        GROUP_CONCAT(DISTINCT secondary_images_url.url) AS secondary_images_URL_string
         FROM pets
         JOIN locations ON pets.id_location = locations.id
-        JOIN user_liked_interactions ON pets.id = user_liked_interactions.id_pet_liked
-        WHERE user_liked_interactions.id_user = ?;`, [userId]);
+        LEFT JOIN user_liked_interactions ON pets.id = user_liked_interactions.id_pet_liked
+        LEFT JOIN secondary_images_url ON pets.id = secondary_images_url.id_pet
+        WHERE user_liked_interactions.id_user = ?
+        GROUP BY pets.id;`, [userId]);
   
   
       connection.release();

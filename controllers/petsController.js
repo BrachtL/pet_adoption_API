@@ -110,9 +110,9 @@ module.exports.pets_get = async (req, res) => {
     console.log(petsList[0]);
     console.log(`petsList length = ${petsList.length}`);
     
-    await getUrlsAndFormatBirthday(petsList);
-    console.log("after forEach: ", petsList[10]);
-    console.log(`after forEach: petsList length = ${petsList.length}`);
+    //await getUrlsAndFormatBirthday(petsList);
+    //console.log("after forEach: ", petsList[10]);
+    //console.log(`after forEach: petsList length = ${petsList.length}`);
 
     res.status(200).json({
       petsList: petsList,
@@ -213,9 +213,11 @@ module.exports.pets_grid_get = async (req, res) => {
     console.log(petsLikedList[0]);
     console.log(`petsLikedList length = ${petsLikedList.length}`);
     
+    /*
     await getUrlsAndFormatBirthday(petsLikedList);
     console.log("after forEach: ", petsLikedList[0]);
     console.log(`after forEach: petsLikedList length = ${petsLikedList.length}`);
+    */
 
     res.status(200).json({
       petsList: petsLikedList,
