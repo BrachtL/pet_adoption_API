@@ -22,10 +22,13 @@ router.post('/pets/dislike', requireAuth, petsController.dislike_pet_post);
 router.get('/pets/grid', requireAuth, petsController.pets_grid_get); //todo: change this route name to pets/liked
 router.post('/pets/create', requireAuth, petsController.pet_create_post);
 router.get('/pets/breeds', requireAuth, petsController.pet_breeds_get);
-router.get('/chat', requireAuth, userController.user_chat_get);
 router.get('/pets/donating', requireAuth, petsController.donating_get);
+router.get('/pets/chat_list', requireAuth, petsController.chat_list_get);
+
+//USERS
+router.get('/chat', requireAuth, userController.user_chat_get);
 
 
 
-const teste = process.env.BFT_DB_HOST;
-module.exports = { router, teste }
+
+module.exports = { router }

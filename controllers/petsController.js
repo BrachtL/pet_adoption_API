@@ -2,11 +2,32 @@
 //const jwt = require('jsonwebtoken');
 //const { jwtSecret } = require('../configPar');
 const { getPetsExceptMineLikedDisliked, setLikeRelation, setDislikeRelation, getSecondaryImagesURL, getLikedPets, getBreeds, insertLocation, 
-  getUserLocation, insertNewPet, setNewPetSecondaryImagesUrls, getDonatingPetsById } = require('../Database/queries');
+  getUserLocation, insertNewPet, setNewPetSecondaryImagesUrls, getDonatingPetsById, getChatDataList } = require('../Database/queries');
 
 //todo: make a resource that pick public ids from public_ids_stored_on_cloudinary (except for the ones included until last week, for instance)
 //and check against all public ids currently being used (from pets, users and secondary_images_url). Then send the remained IDs to be deleted from cloudinary
 //client should not be concerned about it.
+
+module.exports.chat_list_get = async (req, res) => {
+  try {
+    const token = req.headers.token;
+    const petId = req.query.petId;
+    const userId = req.decodedToken.id;
+
+    const chatList = await getChatDataList(petId, userId);
+    console.log("chatList: ", JSON.stringify(chatList));
+    
+    res.status(200).json({
+      token: token,
+      chatList: chatList
+    });   
+
+  } catch(e) {
+
+    //res.status(400).json({});
+    res.status(400).json({message: e.toString()});
+  }
+}
 
 module.exports.donating_get = async (req, res) => {
   try {

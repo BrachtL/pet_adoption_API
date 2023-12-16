@@ -1,18 +1,94 @@
 const pool = require('./dbConfig');
 
 
-async function getChatMessages(id1, id2) {
+async function setSeenMessages(userId, petId) {
+  try {
+    const connection = await pool.getConnection();
+
+    const [results, fields] = await connection.query(
+      `UPDATE messages SET seen = true
+       WHERE id_recipient = ? and id_pet = ?`, 
+      [userId, petId]
+    );
+    console.log(`setSeenMessages(${userId}, ${petId}) -> results: ${JSON.stringify(results)}`);
+
+    connection.release();
+
+    return results;
+    
+  } catch (err) {
+    console.log('Error querying database: setSeenMessages', err);
+    console.log("A MENSAGEM É:  ->> ", err.sqlMessage, " <<-");
+    throw new Error(err.sqlMessage);
+  }
+}
+
+async function getChatDataList(petId, petOwnerId) {
+  try {
+    const connection = await pool.getConnection();
+
+    const [results, fields] = await connection.query(`
+      SELECT
+        users.id,
+        users.name,
+        users.image_URL,
+        MAX(messages.creation_datetime) AS last_message_datetime,
+        messages.content AS last_message_content,
+        COALESCE(unseen_message_counts.unseen_message_count, 0) AS unseen_message_count
+      FROM
+        users
+      JOIN
+        user_liked_interactions ON users.id = user_liked_interactions.id_user
+      LEFT JOIN
+        messages ON (users.id = messages.id_sender OR users.id = messages.id_recipient)
+                    AND messages.id IN (
+                      SELECT MAX(id)
+                      FROM messages
+                      WHERE id_sender = users.id OR id_recipient = users.id
+                      GROUP BY CASE WHEN id_sender = users.id THEN id_recipient ELSE id_sender END
+                    )
+      LEFT JOIN (
+        SELECT
+          CASE WHEN id_sender = ? THEN id_recipient ELSE id_sender END AS user_id,
+          COUNT(*) AS unseen_message_count
+        FROM
+          messages
+        WHERE
+          seen = false AND id_recipient = ?
+        GROUP BY
+          user_id
+      ) AS unseen_message_counts ON users.id = unseen_message_counts.user_id
+      WHERE
+        users.id != ? AND (user_liked_interactions.id_pet_liked = ? OR messages.id_pet = ?)
+      GROUP BY
+        users.id, users.name, users.image_URL;`, 
+   [petOwnerId, petOwnerId, petOwnerId, petId, petId]
+   );
+    console.log(`getChatDataList(${petId})[0] -> results: ${JSON.stringify(results[0])}`);
+
+    connection.release();
+
+    return results;
+  } catch(err) {
+    console.log('Error querying database: getChatDataList', err);
+    console.log("A MENSAGEM É:  ->> ", err.sqlMessage, " <<-");
+    throw new Error(err.sqlMessage);
+  }
+}
+
+
+async function getChatMessages(petId, adoptingUserId) {
   try {
     const connection = await pool.getConnection();
 
     const [results, fields] = await connection.query(
       `SELECT id, id_sender, id_recipient, content, creation_datetime
       FROM messages
-      WHERE (id_sender = ? OR id_sender = ?) AND (id_recipient = ? OR id_recipient = ?)
+      WHERE id_pet = ? AND (id_sender = ? OR id_recipient = ?)
       ORDER BY creation_datetime DESC`, 
-      [id1, id2, id1, id2]
+      [petId, adoptingUserId, adoptingUserId]
     );
-    console.log(`getChatMessages(${id1}, ${id2})[0] -> results: ${JSON.stringify(results[0])}`);
+    console.log(`getChatMessages(${petId})[0] -> results: ${JSON.stringify(results[0])}`);
 
     connection.release();
 
@@ -24,16 +100,16 @@ async function getChatMessages(id1, id2) {
   }
 }
 
-async function insertMessage(senderId, recipientId, content, currentTime) {
+async function insertMessage(senderId, recipientId, content, currentTime, petId) {
   try {
 
     const connection = await pool.getConnection();
 
     const [results, fields] = await connection.query(
-      'INSERT INTO messages (id_sender, id_recipient, content, creation_datetime) VALUES (?, ?, ?, ?)', 
-      [senderId, recipientId, content, currentTime]
+      'INSERT INTO messages (id_sender, id_recipient, content, creation_datetime, id_pet) VALUES (?, ?, ?, ?, ?)', 
+      [senderId, recipientId, content, currentTime, petId]
     );
-    console.log(`insertMessage(${senderId}, ${recipientId}, ${content}, ${currentTime}) -> results: ${JSON.stringify(results.insertId)}`);
+    console.log(`insertMessage(${senderId}, ${recipientId}, ${content}, ${currentTime}, ${petId}) -> results: ${JSON.stringify(results.insertId)}`);
 
     connection.release();
 
@@ -430,5 +506,7 @@ module.exports = {
   insertMessage,
   getPublicUserData,
   getChatMessages,
-  getDonatingPetsById
+  getDonatingPetsById,
+  getChatDataList,
+  setSeenMessages
 }

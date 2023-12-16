@@ -19,9 +19,6 @@ app.use(express.json());
 const routes = require('./routes/routes').router;
 app.use(routes);
 
-const teste = require('./routes/routes').teste;
-console.log("teste -> " + teste);
-
 // Function to handle unexpected errors
 process.on('uncaughtException', (err) => {
   console.error('Uncaught exception:', err);
@@ -52,9 +49,15 @@ wss.on('connection', (webSocket) => {
 
   // Handle user registration with an ID
   webSocket.on('message', async (data) => {
+
+    if(data == "ping") {
+      webSocket.send('pong');
+      return;
+    }
+
     console.log(JSON.parse(data));
     
-    let { type, token, senderId, recipientId, content } = JSON.parse(data);
+    let { type, token, senderId, recipientId, content, petId } = JSON.parse(data);
     //todo: change the way I deal witn token and senderId vars. I am shadowing them, they should be const.
     //maybe change the MessageModel on client too
 
@@ -112,13 +115,13 @@ wss.on('connection', (webSocket) => {
         senderId = token;
       }
 
-      console.log(`Message from ${senderId} to ${recipientId}: ${content}`);
+      console.log(`Message from ${senderId} to ${recipientId}: ${content} -> petId: ${petId}`);
 
       // Persist the message to the database
       const currentDateTime = new Date();
       currentDateTime.setHours(currentDateTime.getHours() - 3);
       const formattedDateTime = currentDateTime.toISOString().slice(0, 19).replace('T', ' ');
-      const idMessage = await insertMessage(senderId, recipientId, content, formattedDateTime);
+      const idMessage = await insertMessage(senderId, recipientId, content, formattedDateTime, petId);
 
       // Retrieve the target user's WebSocket and send the message
       const targetSocket = userSockets.get(recipientId);
