@@ -2,7 +2,7 @@ const express = require("express");
 const http = require('http');
 const WebSocket = require('ws');
 const path = require('path');
-const { insertMessage } = require("./Database/queries");
+const { insertMessage, setLastOnline } = require("./Database/queries");
 const jwt = require('jsonwebtoken');
 const { jwtSecret } = require('./configPar');
 
@@ -61,35 +61,46 @@ wss.on('connection', (webSocket) => {
     //todo: change the way I deal witn token and senderId vars. I am shadowing them, they should be const.
     //maybe change the MessageModel on client too
 
-    if (type === 'register') {
+    if (type == 'register') {
       if (!token) {
         console.log('socket connection attempted without a token');
         webSocket.close();
         return;
       }
 
-      //this allows me to use the html to test without a token, sending the id directly
-      if(token.length > 3) {
+      jwt.verify(token, jwtSecret, (err, decoded) => {
+        if (err) {
+          webSocket.close();
+          return;
+        }
 
-        jwt.verify(token, jwtSecret, (err, decoded) => {
-          if (err) {
-            webSocket.close();
-            return;
-          }
+        const userId = decoded.id;
 
-          const userId = decoded.id;
+        /*
+        if(false && userSockets.get(userId.toString())) {
+          
+          console.log(`User already registered: ${userId}`);
+          return;
 
-          console.log(`User registered: ${userId}`);
-          userSockets.set(userId.toString(), webSocket);
-        });
-      } else {
-        //this is here just for tests
-        const userId = token;
-        console.log(`User registered: ${userId}`);
+        } else {
+        */
+
+        console.log(`User registered now: ${userId}`);
+
         userSockets.set(userId.toString(), webSocket);
-      }
+        const systemMessage = { type: "system", senderId: userId, content: "online" };
 
-    } else if (type === 'private message') {
+        console.log("!  broadcast message  !")
+        userSockets.forEach((webSocket, userId) => {
+          if(userId != decoded.id) {
+            webSocket.send(JSON.stringify(systemMessage));
+            console.log(`message: ${JSON.stringify(systemMessage)}    userId: ${userId}`);
+          }
+        });
+      }); 
+      //});
+
+    } else if (type == 'private message') {
 
       token = senderId;
 
@@ -133,6 +144,38 @@ wss.on('connection', (webSocket) => {
         console.log(`User ${recipientId} not found`);
         // todo: in this case, use firebase to push a notification
       }
+    } else if(type == "system") {
+      token = senderId;
+
+      if (!token) {
+        console.log('socket connection attempted without a token');
+        webSocket.close();
+        return;
+      }  
+
+      jwt.verify(token, jwtSecret, (err, decoded) => {
+        if (err) {
+          webSocket.close();
+          return;
+        }
+
+        senderId = decoded.id;
+      });
+
+      console.log(`System message from ${senderId} to ${recipientId}: ${content}`);
+
+      // Retrieve the target user's WebSocket and send the message
+      const targetSocket = userSockets.get(recipientId);
+      if (targetSocket) {
+        console.log("sending system message ", content, " to ", recipientId);
+        const systemMessage = { type: 'system', senderId: senderId, content };
+        targetSocket.send(JSON.stringify(systemMessage));
+      } else {
+        console.log(`User ${recipientId} not found`);
+        if(content != "online" && content != "offline") {
+          // todo: try again after 1 sec 2x, if negative use firebase to push a notification
+        }
+      }
     }
   });
   
@@ -151,9 +194,13 @@ wss.on('connection', (webSocket) => {
     console.log('User disconnected');
     
     // Remove the disconnected user's WebSocket from the map
-    userSockets.forEach((socket, userId) => {
+    userSockets.forEach(async (socket, userId) => {
       if (socket === webSocket) {
-        console.log(`Removing user: ${userId}`);
+        console.log(`Removing user: ${userId}`);  
+        const currentDateTime = new Date();
+        currentDateTime.setHours(currentDateTime.getHours() - 3);
+        const formattedDateTime = currentDateTime.toISOString().slice(0, 19).replace('T', ' ');
+        await setLastOnline(userId, formattedDateTime);
         userSockets.delete(userId);
       }
     });

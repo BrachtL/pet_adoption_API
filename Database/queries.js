@@ -1,6 +1,28 @@
 const pool = require('./dbConfig');
 
 
+async function setLastOnline(userId, currentTime) {
+  try {
+    const connection = await pool.getConnection();
+
+    const [results, fields] = await connection.query(
+      `UPDATE users SET last_online_datetime = ?
+       WHERE id = ?`, 
+      [currentTime, userId]
+    );
+    console.log(`setLastOnline(${userId}, ${currentTime}) -> results: ${JSON.stringify(results)}`);
+
+    connection.release();
+
+    return results;
+    
+  } catch (err) {
+    console.log('Error querying database: setLastOnline', err);
+    console.log("A MENSAGEM É:  ->> ", err.sqlMessage, " <<-");
+    throw new Error(err.sqlMessage);
+  }
+}
+
 async function setSeenMessages(userId, petId) {
   try {
     const connection = await pool.getConnection();
@@ -508,5 +530,6 @@ module.exports = {
   getChatMessages,
   getDonatingPetsById,
   getChatDataList,
-  setSeenMessages
+  setSeenMessages,
+  setLastOnline
 }
