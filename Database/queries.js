@@ -23,16 +23,16 @@ async function setLastOnline(userId, currentTime) {
   }
 }
 
-async function setSeenMessages(userId, petId) {
+async function setSeenMessages(userId, petId, senderId) {
   try {
     const connection = await pool.getConnection();
 
     const [results, fields] = await connection.query(
       `UPDATE messages SET seen = true
-       WHERE id_recipient = ? and id_pet = ?`, 
-      [userId, petId]
+       WHERE id_recipient = ? and id_pet = ? and id_sender = ?`, 
+      [userId, petId, senderId]
     );
-    console.log(`setSeenMessages(${userId}, ${petId}) -> results: ${JSON.stringify(results)}`);
+    console.log(`setSeenMessages(${userId}, ${petId}, ${senderId}) -> results: ${JSON.stringify(results)}`);
 
     connection.release();
 
@@ -61,14 +61,18 @@ async function getChatDataList(petId, petOwnerId) {
         users
       JOIN
         user_liked_interactions ON users.id = user_liked_interactions.id_user
-      LEFT JOIN
-        messages ON (users.id = messages.id_sender OR users.id = messages.id_recipient)
-                    AND messages.id IN (
-                      SELECT MAX(id)
-                      FROM messages
-                      WHERE id_sender = users.id OR id_recipient = users.id
-                      GROUP BY CASE WHEN id_sender = users.id THEN id_recipient ELSE id_sender END
-                    )
+      LEFT JOIN messages ON (users.id = messages.id_sender OR users.id = messages.id_recipient)
+          AND messages.id = (
+              SELECT id
+              FROM messages
+              WHERE (
+                (id_sender = users.id AND id_recipient = ?)
+                OR
+                (id_recipient = users.id AND id_sender = ?)
+              )
+              ORDER BY creation_datetime DESC, id DESC
+              LIMIT 1
+          )
       LEFT JOIN (
         SELECT
           CASE WHEN id_sender = ? THEN id_recipient ELSE id_sender END AS user_id,
@@ -84,7 +88,7 @@ async function getChatDataList(petId, petOwnerId) {
         users.id != ? AND (user_liked_interactions.id_pet_liked = ? OR messages.id_pet = ?)
       GROUP BY
         users.id, users.name, users.image_URL;`, 
-   [petOwnerId, petOwnerId, petOwnerId, petId, petId]
+   [petOwnerId, petOwnerId, petOwnerId, petOwnerId, petOwnerId, petId, petId]
    );
     console.log(`getChatDataList(${petId})[0] -> results: ${JSON.stringify(results[0])}`);
 

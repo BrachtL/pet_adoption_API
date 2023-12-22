@@ -167,14 +167,56 @@ wss.on('connection', (webSocket) => {
       // Retrieve the target user's WebSocket and send the message
       const targetSocket = userSockets.get(recipientId);
       if (targetSocket) {
-        console.log("sending system message ", content, " to ", recipientId);
-        const systemMessage = { type: 'system', senderId: senderId, content };
-        targetSocket.send(JSON.stringify(systemMessage));
+        if(content == "check online interval") {
+
+        } else {
+          console.log("sending system message ", content, " to ", recipientId);
+          const systemMessage = { type: 'system', senderId: senderId, content };
+          targetSocket.send(JSON.stringify(systemMessage));
+        }
+        
       } else {
         console.log(`User ${recipientId} not found`);
-        if(content != "online" && content != "offline") {
+
+        if(content == "check online interval") {
+          const checkOnlineIntervalMessage = { type: "system", senderId: senderId, content: "offline" };
+          webSocket.send(JSON.stringify(checkOnlineIntervalMessage));
+
+        } else if(content != "online" && content != "offline") {
           // todo: try again after 1 sec 2x, if negative use firebase to push a notification
         }
+      }
+
+////   !!!  Change those type verifications below to content verifications and send "ask online" and "check online interval" using content attribute
+
+    } else if(type == "ask online") {
+      token = senderId;
+
+      if (!token) {
+        console.log('socket connection attempted without a token');
+        webSocket.close();
+        return;
+      }  
+
+      jwt.verify(token, jwtSecret, (err, decoded) => {
+        if (err) {
+          webSocket.close();
+          return;
+        }
+
+        senderId = decoded.id;
+      });
+
+      console.log(`ask online from ${senderId} to ${recipientId}`);
+
+      // Retrieve the target user's WebSocket and send the message
+      const targetSocket = userSockets.get(recipientId);
+      if (targetSocket) {
+        console.log(`user ${recipientId} is online`);
+        const askOnlineMessage = { type: "system", senderId: senderId, content: "online" };
+        webSocket.send(JSON.stringify(askOnlineMessage));
+      } else {
+        console.log(`User ${recipientId} not found`);
       }
     }
   });

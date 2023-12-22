@@ -21,7 +21,7 @@ const { getPublicUserData, getChatMessages, setSeenMessages } = require('../Data
         console.log("messageList.length: ", messageList.length);
       }
      
-      await setSeenMessages(userId, petId);
+      await setSeenMessages(userId, petId, interlocutorId);
       
       res.status(200).json({
         token: token,
