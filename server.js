@@ -168,7 +168,12 @@ wss.on('connection', (webSocket) => {
       const targetSocket = userSockets.get(recipientId);
       if (targetSocket) {
         if(content == "check online interval") {
+          console.log(`check online interval from ${senderId} to ${recipientId}`);
+          
+          console.log(`user ${recipientId} is online`);
 
+          const checkOnlineIntervalMessage = { type: "system", senderId: recipientId, content: "online" };
+          webSocket.send(JSON.stringify(checkOnlineIntervalMessage));
         } else {
           console.log("sending system message ", content, " to ", recipientId);
           const systemMessage = { type: 'system', senderId: senderId, content };
@@ -179,7 +184,7 @@ wss.on('connection', (webSocket) => {
         console.log(`User ${recipientId} not found`);
 
         if(content == "check online interval") {
-          const checkOnlineIntervalMessage = { type: "system", senderId: senderId, content: "offline" };
+          const checkOnlineIntervalMessage = { type: "system", senderId: recipientId, content: "offline" };
           webSocket.send(JSON.stringify(checkOnlineIntervalMessage));
 
         } else if(content != "online" && content != "offline") {
@@ -213,7 +218,7 @@ wss.on('connection', (webSocket) => {
       const targetSocket = userSockets.get(recipientId);
       if (targetSocket) {
         console.log(`user ${recipientId} is online`);
-        const askOnlineMessage = { type: "system", senderId: senderId, content: "online" };
+        const askOnlineMessage = { type: "system", senderId: recipientId, content: "online" };
         webSocket.send(JSON.stringify(askOnlineMessage));
       } else {
         console.log(`User ${recipientId} not found`);
@@ -244,6 +249,7 @@ wss.on('connection', (webSocket) => {
         const formattedDateTime = currentDateTime.toISOString().slice(0, 19).replace('T', ' ');
         await setLastOnline(userId, formattedDateTime);
         userSockets.delete(userId);
+        return;
       }
     });
   });
