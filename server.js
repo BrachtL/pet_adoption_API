@@ -55,7 +55,7 @@ wss.on('connection', (webSocket) => {
       return;
     }
 
-    console.log(JSON.parse(data));
+    //console.log(JSON.parse(data));
     
     let { type, token, senderId, recipientId, content, petId } = JSON.parse(data);
     //todo: change the way I deal witn token and senderId vars. I am shadowing them, they should be const.
@@ -126,6 +126,11 @@ wss.on('connection', (webSocket) => {
         senderId = token;
       }
 
+      if(!userSockets.get(senderId.toString())) {
+        userSockets.set(senderId.toString(), webSocket);
+        console.log("User should be registered already, but it was not. Now it is :D")
+      }
+
       console.log(`Message from ${senderId} to ${recipientId}: ${content} -> petId: ${petId}`);
 
       // Persist the message to the database
@@ -161,6 +166,11 @@ wss.on('connection', (webSocket) => {
 
         senderId = decoded.id;
       });
+
+      if(!userSockets.get(senderId.toString())) {
+        userSockets.set(senderId.toString(), webSocket);
+        console.log("User should be registered already, but it was not. Now it is :D")
+      }
 
       console.log(`System message from ${senderId} to ${recipientId}: ${content}`);
 
@@ -211,6 +221,11 @@ wss.on('connection', (webSocket) => {
 
         senderId = decoded.id;
       });
+
+      if(!userSockets.get(senderId.toString())){
+        userSockets.set(senderId.toString(), webSocket);
+        console.log("User should be registered already, but it was not. Now it is :D")
+      }
 
       console.log(`ask online from ${senderId} to ${recipientId}`);
 
