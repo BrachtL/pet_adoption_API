@@ -2,7 +2,7 @@ const express = require("express");
 const http = require('http');
 const WebSocket = require('ws');
 const path = require('path');
-const { insertMessage, setLastOnline } = require("./Database/queries");
+const { insertMessage, setLastOnline, setSeenMessages } = require("./Database/queries");
 const jwt = require('jsonwebtoken');
 const { jwtSecret } = require('./configPar');
 
@@ -149,6 +149,8 @@ wss.on('connection', (webSocket) => {
         console.log(`User ${recipientId} not found`);
         // todo: in this case, use firebase to push a notification
       }
+
+      //todo: create a commun part with the code shared between all conditions avoiding to repeat the same code 3 times
     } else if(type == "system") {
       token = senderId;
 
@@ -238,6 +240,32 @@ wss.on('connection', (webSocket) => {
       } else {
         console.log(`User ${recipientId} not found`);
       }
+    } else if(type == "set seen messages") {
+      token = senderId;
+
+      if (!token) {
+        console.log('socket connection attempted without a token');
+        webSocket.close();
+        return;
+      }  
+
+      jwt.verify(token, jwtSecret, (err, decoded) => {
+        if (err) {
+          webSocket.close();
+          return;
+        }
+
+        senderId = decoded.id;
+      });
+
+      if(!userSockets.get(senderId.toString())){
+        userSockets.set(senderId.toString(), webSocket);
+        console.log("User should be registered already, but it was not. Now it is :D")
+      }
+
+      console.log(`set seen messages from the ${recipientId} for ${senderId} on the petId: ${content}`);
+
+      await setSeenMessages(senderId, content, recipientId);
     }
   });
   
