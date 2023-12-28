@@ -310,7 +310,7 @@ async function getBreeds() {
 //todo: changed the commented lines
 async function insertUser(
   email, hashedPassword, name, age, category, description, locationId,
-  imageUrl
+  photoData
   ) {
   try {
     const connection = await pool.getConnection();
@@ -322,15 +322,15 @@ async function insertUser(
    
     //todo: insert current_timestamp (or "Now()") in creation_datetime
     const [results, fields] = await connection.query(`
-      INSERT INTO users (id_location, email, name, age, password, description, image_url, category, creation_datetime) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-      [locationId, email, name, age, hashedPassword, description, imageUrl, category]);    
+      INSERT INTO users (id_location, email, name, age, password, description, image_url, category, creation_datetime, image_public_id) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)`,
+      [locationId, email, name, age, hashedPassword, description, photoData.url, category, photoData.publicId]);    
     connection.release();
 
     console.log(`
-      INSERT INTO users (id_location, email, name, age, password, description, image_url, category, creation_datetime) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-      [locationId, email, name, age, hashedPassword, description, imageUrl, category]);
+      INSERT INTO users (id_location, email, name, age, password, description, image_url, category, creation_datetime, image_public_id) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)`,
+      [locationId, email, name, age, hashedPassword, description, photoData.url, category, photoData.publicId]);    
     console.log('insertUser() return:', results);
     return results.insertId;
   } catch (err) {
