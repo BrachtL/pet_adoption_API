@@ -14,10 +14,14 @@ const { getPublicUserData, getChatMessages, setSeenMessages } = require('../Data
       let messageList = [];
 
       if(req.query.adoptingUserId == "me") {
+        console.log("adoptingUserId == me true");
+        console.log(`req.query.adoptingUserId -> ${req.query.adoptingUserId} and interlocutorId -> ${interlocutorId}`);
         messageList = await getChatMessages(petId, userId);
         console.log("messageList.length: ", messageList.length);
       } else {
-        messageList = await getChatMessages(petId, req.query.adoptingUserId);
+        console.log("adoptingUserId == me false");
+        console.log(`req.query.adoptingUserId -> ${req.query.adoptingUserId} and interlocutorId -> ${interlocutorId}`);
+        messageList = await getChatMessages(petId, interlocutorId);
         console.log("messageList.length: ", messageList.length);
       }
      

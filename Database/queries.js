@@ -45,6 +45,63 @@ async function setSeenMessages(userId, petId, senderId) {
   }
 }
 
+async function getChatDataNotOwner(petId, userId) {
+  try {
+    const connection = await pool.getConnection();
+
+    const [results, fields] = await connection.query(`
+      SELECT
+        users.id,
+        users.name,
+        users.image_URL,
+        MAX(messages.creation_datetime) AS last_message_datetime,
+        messages.content AS last_message_content,
+        COALESCE(unseen_message_counts.unseen_message_count, 0) AS unseen_message_count
+      FROM
+        pets
+      JOIN
+        users ON pets.id_user = users.id
+      LEFT JOIN messages ON (users.id = messages.id_sender OR users.id = messages.id_recipient)
+        AND messages.id = (
+          SELECT id
+          FROM messages
+          WHERE (
+            (id_sender = users.id AND id_recipient = ?)
+            OR
+            (id_recipient = users.id AND id_sender = ?)
+          )
+          ORDER BY creation_datetime DESC, id DESC
+          LIMIT 1
+      )
+      LEFT JOIN (
+        SELECT
+          CASE WHEN id_sender = ? THEN id_recipient ELSE id_sender END AS user_id,
+          COUNT(*) AS unseen_message_count
+        FROM
+          messages
+        WHERE
+          seen = false AND id_recipient = ?
+        GROUP BY
+          user_id
+      ) AS unseen_message_counts ON users.id = unseen_message_counts.user_id
+      WHERE
+        pets.id = ?
+      GROUP BY
+        users.id, users.name, users.image_URL;`, 
+      [userId, userId, userId, userId, petId]
+    );
+    console.log(`getChatDataNotOwner(${petId})[0] -> results: ${JSON.stringify(results[0])}`);
+
+    connection.release();
+
+    return results;
+  } catch(err) {
+    console.log('Error querying database: getChatDataNotOwner', err);
+    console.log("A MENSAGEM É:  ->> ", err.sqlMessage, " <<-");
+    throw new Error(err.sqlMessage);
+  }
+}
+
 async function getChatDataList(petId, petOwnerId) {
   try {
     const connection = await pool.getConnection();
@@ -535,5 +592,6 @@ module.exports = {
   getDonatingPetsById,
   getChatDataList,
   setSeenMessages,
-  setLastOnline
+  setLastOnline,
+  getChatDataNotOwner
 }
