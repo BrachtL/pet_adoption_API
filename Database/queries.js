@@ -54,24 +54,23 @@ async function getChatDataNotOwner(petId, userId) {
         users.id,
         users.name,
         users.image_URL,
-        MAX(messages.creation_datetime) AS last_message_datetime,
-        messages.content AS last_message_content,
+        COALESCE(MAX(messages.creation_datetime), '1970-01-01 00:00:00') AS last_message_datetime,
+        COALESCE(MAX(messages.content), '') AS last_message_content,
         COALESCE(unseen_message_counts.unseen_message_count, 0) AS unseen_message_count
       FROM
         pets
       JOIN
         users ON pets.id_user = users.id
       LEFT JOIN messages ON (users.id = messages.id_sender OR users.id = messages.id_recipient)
-        AND messages.id = (
-          SELECT id
+        AND messages.id_pet = pets.id
+        AND messages.creation_datetime = (
+          SELECT MAX(creation_datetime)
           FROM messages
-          WHERE (
+          WHERE
             (id_sender = users.id AND id_recipient = ?)
             OR
             (id_recipient = users.id AND id_sender = ?)
-          )
-          ORDER BY creation_datetime DESC, id DESC
-          LIMIT 1
+            AND id_pet = pets.id
       )
       LEFT JOIN (
         SELECT
@@ -119,17 +118,17 @@ async function getChatDataList(petId, petOwnerId) {
       JOIN
         user_liked_interactions ON users.id = user_liked_interactions.id_user
       LEFT JOIN messages ON (users.id = messages.id_sender OR users.id = messages.id_recipient)
-          AND messages.id = (
-              SELECT id
-              FROM messages
-              WHERE (
-                (id_sender = users.id AND id_recipient = ?)
-                OR
-                (id_recipient = users.id AND id_sender = ?)
-              )
-              ORDER BY creation_datetime DESC, id DESC
-              LIMIT 1
+        AND messages.id = (
+          SELECT id
+          FROM messages
+          WHERE (
+            (id_sender = users.id AND id_recipient = ?)
+            OR
+            (id_recipient = users.id AND id_sender = ?)
           )
+          ORDER BY creation_datetime DESC, id DESC
+          LIMIT 1
+      )
       LEFT JOIN (
         SELECT
           CASE WHEN id_sender = ? THEN id_recipient ELSE id_sender END AS user_id,
