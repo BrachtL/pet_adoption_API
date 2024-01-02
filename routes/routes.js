@@ -28,6 +28,7 @@ router.get('/pets/chat_not_owner', requireAuth, petsController.chat_list_not_own
 
 //USERS
 router.get('/chat', requireAuth, userController.user_chat_get);
+router.post('/firebase/token', requireAuth, userController.token_post);
 
 
 

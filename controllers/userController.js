@@ -1,5 +1,24 @@
-const { getPublicUserData, getChatMessages, setSeenMessages } = require('../Database/queries');
+const { getPublicUserData, getChatMessages, setSeenMessages, saveFbToken } = require('../Database/queries');
 
+  module.exports.token_post = async (req, res) => {
+    try {
+      const token = req.headers.token;
+      const fbToken = req.body.fbToken;
+      const userId = req.decodedToken.id;
+      console.log(req.body);
+      console.log(JSON.stringify(req.body));
+
+      const fbTokenDbResponse = await saveFbToken(fbToken, userId);
+      console.log("fbTokenDbResponse: ", JSON.stringify(fbTokenDbResponse));
+      
+      res.status(200).json({
+        token: token
+      });   
+  
+    } catch(e) {
+      res.status(400).json({message: e.toString()});
+    }
+  }
 
   module.exports.user_chat_get = async (req, res) => {
     try {

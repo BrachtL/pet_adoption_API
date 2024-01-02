@@ -1,5 +1,50 @@
 const pool = require('./dbConfig');
 
+async function getDataToNotify(userId) {
+  try {
+    const connection = await pool.getConnection();
+
+    const [results, fields] = await connection.query(`
+      SELECT firebase_token, name
+      FROM users
+      WHERE id = ?`, 
+      [userId]
+    );
+    console.log(`getFbToken(${userId}) -> results: ${JSON.stringify(results)}`);
+
+    connection.release();
+
+    return results[0];
+    
+  } catch (err) {
+    console.log('Error querying database: getFbToken', err);
+    console.log("A MENSAGEM É:  ->> ", err.sqlMessage, " <<-");
+    throw new Error(err.sqlMessage);
+  }
+}
+
+async function saveFbToken(fbToken, userId) {
+  try {
+    const connection = await pool.getConnection();
+
+    const [results, fields] = await connection.query(
+      `UPDATE users SET firebase_token = ?
+       WHERE id = ?`, 
+      [fbToken, userId]
+    );
+    console.log(`saveFbToken(${fbToken}, ${userId}) -> results: ${JSON.stringify(results)}`);
+
+    connection.release();
+
+    return results;
+    
+  } catch (err) {
+    console.log('Error querying database: saveFbToken', err);
+    console.log("A MENSAGEM É:  ->> ", err.sqlMessage, " <<-");
+    throw new Error(err.sqlMessage);
+  }
+}
+
 
 async function setLastOnline(userId, currentTime) {
   try {
@@ -592,5 +637,7 @@ module.exports = {
   getChatDataList,
   setSeenMessages,
   setLastOnline,
-  getChatDataNotOwner
+  getChatDataNotOwner,
+  saveFbToken,
+  getDataToNotify
 }

@@ -132,3 +132,6 @@ dist
 # config params and credentials
 configPar.js
 dbConfig.js
+
+# firebase
+pet-adoption-fb-firebase-adminsdk-lj4px-6f048a9126.json

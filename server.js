@@ -2,9 +2,16 @@ const express = require("express");
 const http = require('http');
 const WebSocket = require('ws');
 const path = require('path');
-const { insertMessage, setLastOnline, setSeenMessages } = require("./Database/queries");
+const { insertMessage, setLastOnline, setSeenMessages, getDataToNotify } = require("./Database/queries");
 const jwt = require('jsonwebtoken');
 const { jwtSecret } = require('./configPar');
+const firebaseAdmin = require('firebase-admin');
+const serviceAccount = require('./pet-adoption-fb-firebase-adminsdk-lj4px-6f048a9126.json');
+
+firebaseAdmin.initializeApp({
+  credential: firebaseAdmin.credential.cert(serviceAccount),
+});
+
 
 const app = express();
 const mainServer = http.createServer(app);
@@ -145,9 +152,71 @@ wss.on('connection', (webSocket) => {
         console.log("sending message ", content, " to ", recipientId);
         const privateMessage = { type: 'private message', senderId: senderId, content };
         targetSocket.send(JSON.stringify(privateMessage));
+        
+        
+        
+        
+        
+        
+        const dataToNotify = await getDataToNotify(recipientId);
+
+        const message = {
+          data: {
+            // You can include custom data here
+            senderId: `${senderId}`,
+            content: content,
+            type: type
+          },
+          notification: {
+            title: `${dataToNotify.name} enviou mensagens no chat`,
+            body: `Última mensagem enviada: ${content}`,
+          },
+          token: dataToNotify.firebase_token, // FCM registration token
+        };
+
+        console.log(JSON.stringify(message));
+        // Send the message
+        firebaseAdmin.messaging().send(message)
+          .then((response) => {
+            console.log('Successfully sent message:', response);
+          })
+          .catch((error) => {
+            console.error('Error sending message:', error);
+          });
+        
+        
+        
+        
+        
       } else {
         console.log(`User ${recipientId} not found`);
-        // todo: in this case, use firebase to push a notification
+        console.log(`Sending a message to firebase notificate a new message`)
+        
+        const dataToNotify = await getDataToNotify(recipientId);
+
+        const message = {
+          data: {
+            // You can include custom data here
+            senderId: `${senderId}`,
+            content: content,
+            type: type
+          },
+          notification: {
+            title: `${dataToNotify.name} enviou mensagens no chat`,
+            body: `Última mensagem enviada: ${content}`,
+          },
+          token: dataToNotify.firebase_token, // FCM registration token
+        };
+
+        console.log(JSON.stringify(message));
+        // Send the message
+        firebaseAdmin.messaging().send(message)
+          .then((response) => {
+            console.log('Successfully sent message:', response);
+          })
+          .catch((error) => {
+            console.error('Error sending message:', error);
+          });
       }
 
       //todo: create a commun part with the code shared between all conditions avoiding to repeat the same code 3 times
