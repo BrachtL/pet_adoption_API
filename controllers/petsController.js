@@ -2,13 +2,60 @@
 //const jwt = require('jsonwebtoken');
 //const { jwtSecret } = require('../configPar');
 const { getPetsExceptMineLikedDisliked, setLikeRelation, setDislikeRelation, getSecondaryImagesURL, getLikedPets, getBreeds, insertLocation, 
-  getUserLocation, insertNewPet, setNewPetSecondaryImagesUrls, getDonatingPetsById, getChatDataList, getChatDataNotOwner } = require('../Database/queries');
+  getUserLocation, insertNewPet, setNewPetSecondaryImagesUrls, getDonatingPetsById, getChatDataList, getChatDataNotOwner, getPetProfilePic,
+  getPetData } = require('../Database/queries');
 
 //todo: make a resource that pick public ids from public_ids_stored_on_cloudinary (except for the ones included until last week, for instance)
 //and check against all public ids currently being used (from pets, users and secondary_images_url). Then send the remained IDs to be deleted from cloudinary
 //client should not be concerned about it.
 
-module.exports.chat_list_not_owner = async (req, res) => {
+module.exports.pet_data_get = async (req, res) => {
+  try {
+    const token = req.headers.token;
+    const petId = req.query.petId;
+    const userId = req.decodedToken.id;
+
+    const petData = await getPetData(petId);
+    console.log("pet data: ", JSON.stringify(petData));
+    
+    let isThisPetMine;
+    
+    if(petData.id_user == userId) {
+      isThisPetMine = true;
+    } else {
+      isThisPetMine = false;
+    }
+    
+    res.status(200).json({
+      token: token,
+      petData: petData,
+      isThisPetMine: isThisPetMine
+    });   
+
+  } catch(e) {
+    //res.status(400).json({});
+    res.status(400).json({message: e.toString()});
+  }
+}
+
+module.exports.pet_main_image_url_get = async (req, res) => {
+  try {
+    const petId = req.query.petId;
+
+    const petProfilePic = await getPetProfilePic(petId);
+    console.log("pet profile pic: ", JSON.stringify(petProfilePic));
+    
+    res.status(200).json({
+      main_image_URL: petProfilePic
+    });   
+
+  } catch(e) {
+    //res.status(400).json({});
+    res.status(400).json({message: e.toString()});
+  }
+}
+
+module.exports.chat_list_not_owner_get = async (req, res) => {
   try {
     const token = req.headers.token;
     const petId = req.query.petId;

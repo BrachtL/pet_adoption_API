@@ -24,7 +24,9 @@ router.post('/pets/create', requireAuth, petsController.pet_create_post);
 router.get('/pets/breeds', requireAuth, petsController.pet_breeds_get);
 router.get('/pets/donating', requireAuth, petsController.donating_get);
 router.get('/pets/chat_list', requireAuth, petsController.chat_list_get);
-router.get('/pets/chat_not_owner', requireAuth, petsController.chat_list_not_owner);
+router.get('/pets/chat_not_owner', requireAuth, petsController.chat_list_not_owner_get); //todo: this name should be chat_list_not_owner, it is a list of just one item
+router.get('/pets/pet_main_image_url', petsController.pet_main_image_url_get);
+router.get('/pets/pet_data', requireAuth, petsController.pet_data_get);
 
 //USERS
 router.get('/chat', requireAuth, userController.user_chat_get);

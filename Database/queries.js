@@ -1,11 +1,82 @@
 const pool = require('./dbConfig');
 
-async function getDataToNotify(userId) {
+async function getPetData(petId) {
+  try {
+    const connection = await pool.getConnection();
+
+    const [results, fields] = await connection.query(`SELECT pets.id, pets.id_user, pets.id_location, pets.main_image_URL, pets.name, pets.birthday,
+      pets.species, pets.breed, pets.gender, pets.description, pets.creation_datetime,
+      locations.country, locations.uf, locations.city, locations.latitude, locations.longitude,
+      GROUP_CONCAT(DISTINCT secondary_images_url.url) AS secondary_images_URL_string
+      FROM pets
+      JOIN locations ON pets.id_location = locations.id
+      LEFT JOIN secondary_images_url ON pets.id = secondary_images_url.id_pet
+      WHERE pets.id = ?
+      GROUP BY pets.id;`, [petId]); //todo: maybe I dont need this GROUP BY. Check it.
+
+
+    connection.release();
+    console.log(`getPetData(${petId}) return: ${JSON.stringify(results)}`);
+    return results[0];
+  } catch (err) {
+    console.log('Error querying database: getPetData', err);
+    console.log("THE MESSAGE IS:  ->> ", err.sqlMessage, " <<-");
+    throw new Error(err.sqlMessage);
+  }
+}
+
+async function getPetProfilePic(petId) {
   try {
     const connection = await pool.getConnection();
 
     const [results, fields] = await connection.query(`
-      SELECT firebase_token, name
+      SELECT main_image_URL
+      FROM pets
+      WHERE id = ?`, 
+      [petId]
+    );
+    console.log(`getPetProfilePic(${petId}) -> results: ${JSON.stringify(results)}`);
+
+    connection.release();
+
+    return results[0].main_image_URL;
+    
+  } catch (err) {
+    console.log('Error querying database: getPetProfilePic', err);
+    console.log("A MENSAGEM É:  ->> ", err.sqlMessage, " <<-");
+    throw new Error(err.sqlMessage);
+  }
+}
+
+async function getName(userId) {
+  try {
+    const connection = await pool.getConnection();
+
+    const [results, fields] = await connection.query(`
+      SELECT name
+      FROM users
+      WHERE id = ?`, 
+      [userId]
+    );
+    console.log(`getName(${userId}) -> results: ${JSON.stringify(results)}`);
+
+    connection.release();
+
+    return results[0].name;
+    
+  } catch (err) {
+    console.log('Error querying database: getName', err);
+    console.log("A MENSAGEM É:  ->> ", err.sqlMessage, " <<-");
+    throw new Error(err.sqlMessage);
+  }
+}
+
+async function getFbToken(userId) {
+  try {
+    const connection = await pool.getConnection();
+
+    const [results, fields] = await connection.query(`
+      SELECT firebase_token
       FROM users
       WHERE id = ?`, 
       [userId]
@@ -14,7 +85,7 @@ async function getDataToNotify(userId) {
 
     connection.release();
 
-    return results[0];
+    return results[0].firebase_token;
     
   } catch (err) {
     console.log('Error querying database: getFbToken', err);
@@ -639,5 +710,8 @@ module.exports = {
   setLastOnline,
   getChatDataNotOwner,
   saveFbToken,
-  getDataToNotify
+  getFbToken,
+  getName,
+  getPetProfilePic,
+  getPetData
 }

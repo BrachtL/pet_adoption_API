@@ -2,7 +2,7 @@ const express = require("express");
 const http = require('http');
 const WebSocket = require('ws');
 const path = require('path');
-const { insertMessage, setLastOnline, setSeenMessages, getDataToNotify } = require("./Database/queries");
+const { insertMessage, setLastOnline, setSeenMessages, getFbToken, getName } = require("./Database/queries");
 const jwt = require('jsonwebtoken');
 const { jwtSecret } = require('./configPar');
 const firebaseAdmin = require('firebase-admin');
@@ -83,6 +83,8 @@ wss.on('connection', (webSocket) => {
 
         const userId = decoded.id;
 
+
+        //todo: why is this commented? It makes sense. Check it later
         /*
         if(false && userSockets.get(userId.toString())) {
           
@@ -95,7 +97,7 @@ wss.on('connection', (webSocket) => {
         console.log(`User registered now: ${userId}`);
 
         userSockets.set(userId.toString(), webSocket);
-        const systemMessage = { type: "system", senderId: userId, content: "online" };
+        const systemMessage = { type: "system", senderId: userId, content: "online", senderName: "", petId: "" };
 
         console.log("!  broadcast message  !")
         userSockets.forEach((webSocket, userId) => {
@@ -117,21 +119,14 @@ wss.on('connection', (webSocket) => {
         return;
       }
 
-      //this allows me to use the html to test without a token, sending the id directly
-      if(token.length > 3) {
+      jwt.verify(token, jwtSecret, (err, decoded) => {
+        if (err) {
+          webSocket.close();
+          return;
+        }
 
-        jwt.verify(token, jwtSecret, (err, decoded) => {
-          if (err) {
-            webSocket.close();
-            return;
-          }
-
-          senderId = decoded.id;
-        });
-      } else {
-        //this is here just for tests
-        senderId = token;
-      }
+        senderId = decoded.id;
+      });
 
       if(!userSockets.get(senderId.toString())) {
         userSockets.set(senderId.toString(), webSocket);
@@ -145,67 +140,34 @@ wss.on('connection', (webSocket) => {
       currentDateTime.setHours(currentDateTime.getHours() - 3);
       const formattedDateTime = currentDateTime.toISOString().slice(0, 19).replace('T', ' ');
       const idMessage = await insertMessage(senderId, recipientId, content, formattedDateTime, petId);
+      const senderName = await getName(senderId);
 
       // Retrieve the target user's WebSocket and send the message
       const targetSocket = userSockets.get(recipientId);
       if (targetSocket) {
         console.log("sending message ", content, " to ", recipientId);
-        const privateMessage = { type: 'private message', senderId: senderId, content };
+        const privateMessage = { type: 'private message', senderId: senderId, content: content, senderName: senderName, petId: petId };
         targetSocket.send(JSON.stringify(privateMessage));
-        
-        
-        
-        
-        
-        
-        const dataToNotify = await getDataToNotify(recipientId);
-
-        const message = {
-          data: {
-            // You can include custom data here
-            senderId: `${senderId}`,
-            content: content,
-            type: type
-          },
-          notification: {
-            title: `${dataToNotify.name} enviou mensagens no chat`,
-            body: `Última mensagem enviada: ${content}`,
-          },
-          token: dataToNotify.firebase_token, // FCM registration token
-        };
-
-        console.log(JSON.stringify(message));
-        // Send the message
-        firebaseAdmin.messaging().send(message)
-          .then((response) => {
-            console.log('Successfully sent message:', response);
-          })
-          .catch((error) => {
-            console.error('Error sending message:', error);
-          });
-        
-        
-        
-        
         
       } else {
         console.log(`User ${recipientId} not found`);
         console.log(`Sending a message to firebase notificate a new message`)
         
-        const dataToNotify = await getDataToNotify(recipientId);
+        const fbToken = await getFbToken(recipientId);
 
         const message = {
           data: {
-            // You can include custom data here
             senderId: `${senderId}`,
             content: content,
-            type: type
+            type: type,
+            senderName: senderName,
+            petId: petId
           },
-          notification: {
-            title: `${dataToNotify.name} enviou mensagens no chat`,
+          /*notification: { //this block is used when I want the firebase to send a notification directly
+            title: `${senderName} enviou mensagens no chat`,
             body: `Última mensagem enviada: ${content}`,
-          },
-          token: dataToNotify.firebase_token, // FCM registration token
+          },*/
+          token: fbToken, // FCM registration token
         };
 
         console.log(JSON.stringify(message));
@@ -253,7 +215,7 @@ wss.on('connection', (webSocket) => {
           
           console.log(`user ${recipientId} is online`);
 
-          const checkOnlineIntervalMessage = { type: "system", senderId: recipientId, content: "online" };
+          const checkOnlineIntervalMessage = { type: "system", senderId: recipientId, content: "online", senderName: "", petId: "" };
           webSocket.send(JSON.stringify(checkOnlineIntervalMessage));
         } else {
           console.log("sending system message ", content, " to ", recipientId);
@@ -265,7 +227,7 @@ wss.on('connection', (webSocket) => {
         console.log(`User ${recipientId} not found`);
 
         if(content == "check online interval") {
-          const checkOnlineIntervalMessage = { type: "system", senderId: recipientId, content: "offline" };
+          const checkOnlineIntervalMessage = { type: "system", senderId: recipientId, content: "offline", senderName: "", petId: "" };
           webSocket.send(JSON.stringify(checkOnlineIntervalMessage));
 
         } else if(content != "online" && content != "offline") {
@@ -304,7 +266,7 @@ wss.on('connection', (webSocket) => {
       const targetSocket = userSockets.get(recipientId);
       if (targetSocket) {
         console.log(`user ${recipientId} is online`);
-        const askOnlineMessage = { type: "system", senderId: recipientId, content: "online" };
+        const askOnlineMessage = { type: "system", senderId: recipientId, content: "online", senderName: "", petId: "" };
         webSocket.send(JSON.stringify(askOnlineMessage));
       } else {
         console.log(`User ${recipientId} not found`);
