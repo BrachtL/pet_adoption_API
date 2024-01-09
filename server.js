@@ -62,9 +62,10 @@ wss.on('connection', (webSocket) => {
       return;
     }
 
-    //console.log(JSON.parse(data));
+    console.log(JSON.parse(data));
     
     let { type, token, senderId, recipientId, content, petId } = JSON.parse(data);
+    console.log("petId ---> ", petId);
     //todo: change the way I deal witn token and senderId vars. I am shadowing them, they should be const.
     //maybe change the MessageModel on client too
 
@@ -97,7 +98,7 @@ wss.on('connection', (webSocket) => {
         console.log(`User registered now: ${userId}`);
 
         userSockets.set(userId.toString(), webSocket);
-        const systemMessage = { type: "system", senderId: userId, content: "online", senderName: "", petId: "" };
+        const systemMessage = { type: "system", senderId: userId, content: "online", senderName: "", petId: petId };
 
         console.log("!  broadcast message  !")
         userSockets.forEach((webSocket, userId) => {
@@ -206,6 +207,9 @@ wss.on('connection', (webSocket) => {
       }
 
       console.log(`System message from ${senderId} to ${recipientId}: ${content}`);
+      console.log(`type = ${type}, petId = ${petId}`);
+
+      const senderName = await getName(senderId);
 
       // Retrieve the target user's WebSocket and send the message
       const targetSocket = userSockets.get(recipientId);
@@ -215,11 +219,12 @@ wss.on('connection', (webSocket) => {
           
           console.log(`user ${recipientId} is online`);
 
-          const checkOnlineIntervalMessage = { type: "system", senderId: recipientId, content: "online", senderName: "", petId: "" };
+          const checkOnlineIntervalMessage = { type: "system", senderId: recipientId, content: "online", senderName: senderName, petId: petId };
           webSocket.send(JSON.stringify(checkOnlineIntervalMessage));
         } else {
           console.log("sending system message ", content, " to ", recipientId);
-          const systemMessage = { type: 'system', senderId: senderId, content };
+          console.log(`type = ${type}, petId = ${petId}, senderName = ${senderName}`);
+          const systemMessage = { type: 'system', senderId: senderId, content: content, senderName: senderName, petId: petId };
           targetSocket.send(JSON.stringify(systemMessage));
         }
         
@@ -227,12 +232,39 @@ wss.on('connection', (webSocket) => {
         console.log(`User ${recipientId} not found`);
 
         if(content == "check online interval") {
-          const checkOnlineIntervalMessage = { type: "system", senderId: recipientId, content: "offline", senderName: "", petId: "" };
+          const checkOnlineIntervalMessage = { type: "system", senderId: recipientId, content: "offline", senderName: senderName, petId: petId };
           webSocket.send(JSON.stringify(checkOnlineIntervalMessage));
 
         } else if(content != "online" && content != "offline") {
-          // todo: try again after 1 sec 2x, if negative use firebase to push a notification
-        }
+          console.log(`Sending a message to firebase notificate a new message`)
+        
+          const fbToken = await getFbToken(recipientId);
+
+          const message = {
+            data: {
+              senderId: `${senderId}`,
+              content: content,
+              type: type,
+              senderName: senderName,
+              petId: petId
+            },
+            /*notification: { //this block is used when I want the firebase to send a notification directly
+              title: `${senderName} enviou mensagens no chat`,
+              body: `Última mensagem enviada: ${content}`,
+            },*/
+            token: fbToken, // FCM registration token
+          };
+
+          console.log(JSON.stringify(message));
+          // Send the message
+          firebaseAdmin.messaging().send(message)
+            .then((response) => {
+              console.log('Successfully sent message:', response);
+            })
+            .catch((error) => {
+              console.error('Error sending message:', error);
+            });
+          }
       }
 
 ////   !!!  Change those type verifications below to content verifications and send "ask online" and "check online interval" using content attribute
@@ -266,7 +298,7 @@ wss.on('connection', (webSocket) => {
       const targetSocket = userSockets.get(recipientId);
       if (targetSocket) {
         console.log(`user ${recipientId} is online`);
-        const askOnlineMessage = { type: "system", senderId: recipientId, content: "online", senderName: "", petId: "" };
+        const askOnlineMessage = { type: "system", senderId: recipientId, content: "online", senderName: "", petId: petId };
         webSocket.send(JSON.stringify(askOnlineMessage));
       } else {
         console.log(`User ${recipientId} not found`);
