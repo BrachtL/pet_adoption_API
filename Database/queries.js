@@ -195,7 +195,7 @@ async function getChatDataNotOwner(petId, userId) {
         FROM
           messages
         WHERE
-          seen = false AND id_recipient = ?
+          seen = false AND id_recipient = ? AND id_pet = ?
         GROUP BY
           user_id
       ) AS unseen_message_counts ON users.id = unseen_message_counts.user_id
@@ -203,7 +203,7 @@ async function getChatDataNotOwner(petId, userId) {
         pets.id = ?
       GROUP BY
         users.id, users.name, users.image_URL;`, 
-      [userId, userId, userId, userId, petId]
+      [userId, userId, userId, userId, petId, petId]
     );
     console.log(`getChatDataNotOwner(${petId})[0] -> results: ${JSON.stringify(results[0])}`);
 
@@ -238,9 +238,13 @@ async function getChatDataList(petId, petOwnerId) {
           SELECT id
           FROM messages
           WHERE (
-            (id_sender = users.id AND id_recipient = ?)
-            OR
-            (id_recipient = users.id AND id_sender = ?)
+            (id_pet = ?)
+            AND
+            (
+              (id_sender = users.id AND id_recipient = ?)
+              OR
+              (id_recipient = users.id AND id_sender = ?)
+            )
           )
           ORDER BY creation_datetime DESC, id DESC
           LIMIT 1
@@ -252,7 +256,7 @@ async function getChatDataList(petId, petOwnerId) {
         FROM
           messages
         WHERE
-          seen = false AND id_recipient = ?
+          seen = false AND id_recipient = ? AND id_pet = ?
         GROUP BY
           user_id
       ) AS unseen_message_counts ON users.id = unseen_message_counts.user_id
@@ -260,7 +264,7 @@ async function getChatDataList(petId, petOwnerId) {
         users.id != ? AND (user_liked_interactions.id_pet_liked = ? OR messages.id_pet = ?)
       GROUP BY
         users.id, users.name, users.image_URL;`, 
-   [petOwnerId, petOwnerId, petOwnerId, petOwnerId, petOwnerId, petId, petId]
+   [petId, petOwnerId, petOwnerId, petOwnerId, petOwnerId, petId, petOwnerId, petId, petId]
    );
     console.log(`getChatDataList(${petId})[0] -> results: ${JSON.stringify(results[0])}`);
 

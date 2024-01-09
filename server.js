@@ -146,7 +146,7 @@ wss.on('connection', (webSocket) => {
       // Retrieve the target user's WebSocket and send the message
       const targetSocket = userSockets.get(recipientId);
       if (targetSocket) {
-        console.log("sending message ", content, " to ", recipientId);
+        console.log("sending message ", content, " to ", recipientId, "petId -> ", petId);
         const privateMessage = { type: 'private message', senderId: senderId, content: content, senderName: senderName, petId: petId };
         targetSocket.send(JSON.stringify(privateMessage));
         
