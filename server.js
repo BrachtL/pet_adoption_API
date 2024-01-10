@@ -156,30 +156,33 @@ wss.on('connection', (webSocket) => {
         
         const fbToken = await getFbToken(recipientId);
 
-        const message = {
-          data: {
-            senderId: `${senderId}`,
-            content: content,
-            type: type,
-            senderName: senderName,
-            petId: petId
-          },
-          /*notification: { //this block is used when I want the firebase to send a notification directly
-            title: `${senderName} enviou mensagens no chat`,
-            body: `Última mensagem enviada: ${content}`,
-          },*/
-          token: fbToken, // FCM registration token
-        };
+        if(fbToken != null && fbToken != "") {
 
-        console.log(JSON.stringify(message));
-        // Send the message
-        firebaseAdmin.messaging().send(message)
-          .then((response) => {
-            console.log('Successfully sent message:', response);
-          })
-          .catch((error) => {
-            console.error('Error sending message:', error);
-          });
+          const message = {
+            data: {
+              senderId: `${senderId}`,
+              content: content,
+              type: type,
+              senderName: senderName,
+              petId: petId
+            },
+            /*notification: { //this block is used when I want the firebase to send a notification directly
+              title: `${senderName} enviou mensagens no chat`,
+              body: `Última mensagem enviada: ${content}`,
+            },*/
+            token: fbToken, // FCM registration token
+          };
+
+          console.log(JSON.stringify(message));
+          // Send the message
+          firebaseAdmin.messaging().send(message)
+            .then((response) => {
+              console.log('Successfully sent message:', response);
+            })
+            .catch((error) => {
+              console.error('Error sending message:', error);
+            });
+        }
       }
 
       //todo: create a commun part with the code shared between all conditions avoiding to repeat the same code 3 times
@@ -240,30 +243,33 @@ wss.on('connection', (webSocket) => {
         
           const fbToken = await getFbToken(recipientId);
 
-          const message = {
-            data: {
-              senderId: `${senderId}`,
-              content: content,
-              type: type,
-              senderName: senderName,
-              petId: petId
-            },
-            /*notification: { //this block is used when I want the firebase to send a notification directly
-              title: `${senderName} enviou mensagens no chat`,
-              body: `Última mensagem enviada: ${content}`,
-            },*/
-            token: fbToken, // FCM registration token
-          };
+          if(fbToken != null && fbToken != "") {
 
-          console.log(JSON.stringify(message));
-          // Send the message
-          firebaseAdmin.messaging().send(message)
-            .then((response) => {
-              console.log('Successfully sent message:', response);
-            })
-            .catch((error) => {
-              console.error('Error sending message:', error);
-            });
+            const message = {
+              data: {
+                senderId: `${senderId}`,
+                content: content,
+                type: type,
+                senderName: senderName,
+                petId: petId
+              },
+              /*notification: { //this block is used when I want the firebase to send a notification directly
+                title: `${senderName} enviou mensagens no chat`,
+                body: `Última mensagem enviada: ${content}`,
+              },*/
+              token: fbToken, // FCM registration token
+            };
+
+            console.log(JSON.stringify(message));
+            // Send the message
+            firebaseAdmin.messaging().send(message)
+              .then((response) => {
+                console.log('Successfully sent message:', response);
+              })
+              .catch((error) => {
+                console.error('Error sending message:', error);
+              });
+            }
           }
       }
 
