@@ -220,6 +220,7 @@ async function getChatDataNotOwner(petId, userId) {
 async function getChatDataList(petId, petOwnerId) {
   try {
     const connection = await pool.getConnection();
+    console.log("getChatDataList query sent");
 
     const [results, fields] = await connection.query(`
       SELECT

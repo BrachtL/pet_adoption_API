@@ -62,7 +62,7 @@ wss.on('connection', (webSocket) => {
       return;
     }
 
-    console.log(JSON.parse(data));
+    //console.log(JSON.parse(data));
     
     let { type, token, senderId, recipientId, content, petId } = JSON.parse(data);
     console.log("petId ---> ", petId);
@@ -104,7 +104,7 @@ wss.on('connection', (webSocket) => {
         userSockets.forEach((webSocket, userId) => {
           if(userId != decoded.id) {
             webSocket.send(JSON.stringify(systemMessage));
-            console.log(`message: ${JSON.stringify(systemMessage)}    userId: ${userId}`);
+            //console.log(`message: ${JSON.stringify(systemMessage)}    userId: ${userId}`);
           }
         });
       }); 
@@ -173,11 +173,11 @@ wss.on('connection', (webSocket) => {
             token: fbToken, // FCM registration token
           };
 
-          console.log(JSON.stringify(message));
+          //console.log(JSON.stringify(message));
           // Send the message
           firebaseAdmin.messaging().send(message)
             .then((response) => {
-              console.log('Successfully sent message:', response);
+              //console.log('Successfully sent message:', response);
             })
             .catch((error) => {
               console.error('Error sending message:', error);
@@ -260,11 +260,11 @@ wss.on('connection', (webSocket) => {
               token: fbToken, // FCM registration token
             };
 
-            console.log(JSON.stringify(message));
+            //console.log(JSON.stringify(message));
             // Send the message
             firebaseAdmin.messaging().send(message)
               .then((response) => {
-                console.log('Successfully sent message:', response);
+                //console.log('Successfully sent message:', response);
               })
               .catch((error) => {
                 console.error('Error sending message:', error);
