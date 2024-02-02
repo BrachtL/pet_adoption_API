@@ -33,6 +33,9 @@ router.get('/chat', requireAuth, userController.user_chat_get);
 router.post('/firebase/token', requireAuth, userController.token_post);
 
 
+//DELETION URLs
+router.get('/adotepelobem/excluirconta', userController.show_delete_page);
+router.post('/adotepelobem/excluirconta', userController.delete_user_data);
 
 
 module.exports = { router }

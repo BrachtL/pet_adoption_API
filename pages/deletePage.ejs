@@ -1,0 +1,172 @@
+<!-- deletePage.ejs -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Excluir conta</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    .container {
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    p {
+      color: #555;
+      margin-bottom: 20px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    label {
+      margin-bottom: 8px;
+      color: #333;
+    }
+
+    input {
+      padding: 10px;
+      margin-bottom: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    button {
+      background-color: #dc3545;
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #c82333;
+    }
+
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+    }
+
+    .success {
+      border: 2px solid #28a745;
+      color: #28a745;
+    }
+
+    .error {
+      border: 2px solid #dc3545;
+      color: #dc3545;
+    }
+
+    .modal button {
+      background-color: #007bff;
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      margin-top: 10px;
+    }
+
+    .modal button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Excluir conta</h1>
+    <p>Esta ação irá excluir <strong>todos os seus dados</strong> do app adote pelo bem</p>
+    <br>
+    <form action="/adotepelobem/excluirconta" method="post">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required>
+
+      <label for="senha">Senha</label>
+      <input type="password" id="senha" name="senha" required>
+
+      <br>
+
+      <button type="submit">Excluir Conta</button>
+    </form>
+
+    <% if (successMessage) { %>
+      <!-- Success Modal -->
+      <div class="modal success" id="successModal">
+        <p><%= successMessage %></p>
+        <button onclick="dismissModal('successModal')">OK</button>
+      </div>
+    <% } %>
+
+    <% if (errorMessage) { %>
+      <!-- Error Modal -->
+      <div class="modal error" id="errorModal">
+        <p><%= errorMessage %></p>
+        <button onclick="dismissModal('errorModal')">OK</button>
+      </div>
+    <% } %>
+
+    <script>
+      // Script to show modal on page load
+      document.addEventListener("DOMContentLoaded", function () {
+        var successModal = document.getElementById("successModal");
+        var errorModal = document.getElementById("errorModal");
+
+        if (successModal) {
+          successModal.style.display = "block";
+        }
+
+        if (errorModal) {
+          errorModal.style.display = "block";
+        }
+      });
+
+      // Script to dismiss modal
+      function dismissModal(modalId) {
+        var modal = document.getElementById(modalId);
+        if (modal) {
+          modal.style.display = "none";
+        }
+      }
+    </script>
+  </div>
+</body>
+</html>

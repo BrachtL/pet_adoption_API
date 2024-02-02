@@ -1,5 +1,151 @@
 const pool = require('./dbConfig');
 
+async function getPetIdList(userId) {
+  try {
+    const connection = await pool.getConnection();
+
+    const [results, fields] = await connection.query(`
+      SELECT id
+      FROM pets
+      WHERE id_user = ?`,
+      [userId]
+    ); //todo: maybe I dont need this GROUP BY. Check it.
+
+
+    connection.release();
+    
+    const petIdList = results.map(row => row.id);
+    
+    console.log(`getPetIdList(${userId}) return: ${JSON.stringify(petIdList)}`);
+    return petIdList;
+  } catch (err) {
+    console.log('Error querying database: getPetIdList', err);
+    console.log("THE MESSAGE IS:  ->> ", err.sqlMessage, " <<-");
+    throw new Error(err.sqlMessage);
+  }
+}
+
+async function deletePetsByIdList(petIdList) {
+  try {
+    const connection = await pool.getConnection();   
+    //let resultsList = [];
+    
+    let [results, fields] = [];
+    
+    for(let k = 0; k < petIdList.length; k++) {
+      /*
+      
+      const [results, fields] = await connection.query(`
+        DELETE FROM pet_location WHERE id_pet = ?`,
+        [petIdList[k]] 
+      ); 
+
+      console.log(`
+        DELETE FROM pet_location WHERE id_pet = ?`,
+        [petIdList[k]]
+      );
+      //resultsList[k] = results;
+      
+      */
+      
+      [results, fields] = await connection.query(`
+        DELETE FROM secondary_images_url WHERE id_pet = ?`,
+        [petIdList[k]] 
+      ); 
+      console.log(`
+        DELETE FROM secondary_images_url WHERE id_pet = ?`,
+        [petIdList[k]]
+      );
+      
+      [results, fields] = await connection.query(`
+        DELETE FROM user_liked_interactions WHERE id_pet_liked = ?`,
+        [petIdList[k]] 
+      ); 
+      console.log(`
+        DELETE FROM user_liked_interactions WHERE id_pet_liked = ?`,
+        [petIdList[k]]
+      );
+      
+      [results, fields] = await connection.query(`
+        DELETE FROM user_disliked_interactions WHERE id_pet_disliked = ?`,
+        [petIdList[k]] 
+      ); 
+      console.log(`
+        DELETE FROM user_disliked_interactions WHERE id_pet_disliked = ?`,
+        [petIdList[k]]
+      );
+      
+      [results, fields] = await connection.query(`
+        DELETE FROM pet_location WHERE id_pet = ?`,
+        [petIdList[k]] 
+      ); 
+      console.log(`
+        DELETE FROM pet_location WHERE id_pet = ?`,
+        [petIdList[k]]
+      );
+      
+      [results, fields] = await connection.query(`
+        DELETE FROM messages WHERE id_pet = ?`,
+        [petIdList[k]] 
+      ); 
+      console.log(`
+        DELETE FROM messages WHERE id_pet = ?`,
+        [petIdList[k]]
+      );
+      
+      [results, fields] = await connection.query(`
+        DELETE FROM pets WHERE id = ?`,
+        [petIdList[k]] 
+      ); 
+      console.log(`
+        DELETE FROM pets WHERE id = ?`,
+        [petIdList[k]]
+      );
+    }
+   
+    connection.release();
+
+    console.log(`deletePetsByIdList(${petIdList}) returns true`);
+    return true;
+  } catch (err) {
+    console.log(`Error querying database: deletePetsByIdList(${petIdList})`, err);
+    console.log("A MENSAGEM É:  ->> ", err.sqlMessage, " <<-");
+    throw new Error(err.sqlMessage);
+  }
+}
+
+async function deleteUserById(userId) {
+  
+  const connection = await pool.getConnection();
+  try {
+
+    await connection.beginTransaction();
+
+    // Execute the queries
+    await connection.query(`DELETE FROM user_liked_interactions WHERE id_user = ?`, [userId]);
+    await connection.query(`DELETE FROM user_disliked_interactions WHERE id_user = ?`, [userId]);
+    await connection.query(`DELETE FROM pets WHERE id_user = ?`, [userId]);
+    await connection.query(`DELETE FROM messages WHERE id_sender = ? OR id_recipient = ?`, [userId, userId]);
+    await connection.query(`DELETE FROM users WHERE id = ?`, [userId]);
+
+    // Commit the transaction if all queries succeed
+    await connection.commit();
+
+    console.log('All deletions successful');
+    return true;
+    
+  } catch (error) {
+    // Rollback the transaction if any query fails
+    await connection.rollback();
+    console.error('Error performing deletions:', error.message);
+    return false;
+    
+  } finally {
+    // Release the connection back to the pool
+    connection.release();
+  }
+};
+
 async function getPetData(petId) {
   try {
     const connection = await pool.getConnection();
@@ -81,7 +227,7 @@ async function getFbToken(userId) {
       WHERE id = ?`, 
       [userId]
     );
-    console.log(`getFbToken(${userId}) -> results: ${JSON.stringify(results)}`);
+    console.log(`getFbToken(${userId}) -> results: ${JSON.stringify(results[0])}`);
 
     connection.release();
 
@@ -498,7 +644,7 @@ async function getLocationId(city, uf) {
   }
 }
 
-//this query is only used to give the user a token. All the rest (getUser(id)) is done with the token
+//this query is only used to give the user a token or to delete a user. All the rest (getUser(id)) is done with the token
 async function getUserData(email) {
   try {
     const connection = await pool.getConnection();
@@ -718,5 +864,9 @@ module.exports = {
   getFbToken,
   getName,
   getPetProfilePic,
-  getPetData
+  getPetData,
+  getPetIdList,
+  deletePetsByIdList,
+  deleteUserById
+  
 }

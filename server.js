@@ -10,7 +10,7 @@ const serviceAccount = require('./pet-adoption-fb-firebase-adminsdk-lj4px-6f048a
 
 firebaseAdmin.initializeApp({
   credential: firebaseAdmin.credential.cert(serviceAccount),
-});
+}); 
 
 
 const app = express();
@@ -23,6 +23,7 @@ app.get('/socket', (req, res) => {
 
 // Main Express server
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 const routes = require('./routes/routes').router;
 app.use(routes);
 
